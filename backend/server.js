@@ -13,5 +13,8 @@ app.get('/', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+const testRoutes = require('./routes/testRoutes');
+app.use('/api/test', testRoutes);
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
