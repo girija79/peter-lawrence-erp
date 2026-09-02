@@ -13,6 +13,9 @@ app.get('/', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+const authRoutes = require('./routes/authRoutes');
+app.use('/api/auth', authRoutes);
+
 const testRoutes = require('./routes/testRoutes');
 app.use('/api/test', testRoutes);
 
