@@ -1,69 +1,129 @@
 import { useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { AuthContext } from '../context/AuthContext';
 
 function Navbar({ user }) {
   const { logout } = useContext(AuthContext);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
+  // Convert route into a readable page title
+  const getPageTitle = () => {
+    const path = location.pathname;
+
+    const titles = {
+      '/dashboard': 'Overview',
+      '/users': 'User Management',
+      '/clients': 'Clients',
+      '/lawyers': 'Lawyers',
+      '/cases': 'Cases',
+      '/appointments': 'Appointments',
+      '/documents': 'Documents',
+      '/billing': 'Billing',
+      '/employees': 'Employees',
+      '/hr': 'HR Management',
+      '/careers': 'Career Portal',
+      '/vendors': 'Vendors',
+      '/petty-cash': 'Petty Cash',
+      '/payroll': 'Payroll',
+      '/reports': 'Reports',
+      '/profile': 'My Profile',
+      '/attendance': 'Attendance',
+      '/leave': 'Leave',
+      '/payments': 'Payments'
+    };
+
+    return titles[path] || 'Peter Lawrence';
+  };
+
   return (
-    <nav className="navbar bg-white border-bottom px-4">
+    <header className="topbar">
 
-      {/* Page Title */}
-      <div>
-        <h5 className="mb-0">Dashboard</h5>
-      </div>
+      {/* Left Side */}
+      <div className="topbar-left">
 
-      {/* User Section */}
-      <div className="d-flex align-items-center gap-3">
-
-        {/* Notification */}
-        <button className="btn btn-light">
-          <i className="bi bi-bell fs-5"></i>
-        </button>
-
-        {/* User Name & Role */}
-        <div className="text-end">
-          <div className="fw-semibold">
-            {user?.name}
+        <div className="topbar-page">
+          <div className="topbar-eyebrow">
+            PETER LAWRENCE · LEGAL OFFICE
           </div>
 
-          <small className="text-muted text-capitalize">
-            {user?.role}
-          </small>
+          <h1 className="topbar-title">
+            {getPageTitle()}
+          </h1>
         </div>
 
-        {/* Profile Circle */}
-        <div
-          className="rounded-circle bg-primary text-white
-                     d-flex align-items-center justify-content-center"
-          style={{
-            width: '40px',
-            height: '40px'
-          }}
-        >
-          {user?.name?.charAt(0).toUpperCase()}
+      </div>
+
+      {/* Right Side */}
+      <div className="topbar-right">
+
+        {/* Date / Office Label */}
+        <div className="topbar-office">
+          <span className="topbar-office-label">
+            BELGRADE
+          </span>
+
+          <span className="topbar-office-status">
+            <span className="status-dot"></span>
+            Office system
+          </span>
         </div>
 
-        {/* Logout Button */}
+        {/* Divider */}
+        <div className="topbar-divider"></div>
+
+        {/* Notifications */}
         <button
-          className="btn btn-outline-danger"
+          type="button"
+          className="topbar-icon-button"
+          title="Notifications"
+        >
+          <i className="bi bi-bell"></i>
+
+          <span className="notification-dot"></span>
+        </button>
+
+        {/* User */}
+        <div className="topbar-user">
+
+          <div className="topbar-user-avatar">
+            {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+          </div>
+
+          <div className="topbar-user-details">
+
+            <div className="topbar-user-name">
+              {user?.name || 'User'}
+            </div>
+
+            <div className="topbar-user-role">
+              {user?.role || 'User'}
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* Logout */}
+        <button
+          type="button"
+          className="topbar-logout"
           onClick={handleLogout}
           title="Logout"
         >
-          <i className="bi bi-box-arrow-right me-1"></i>
-          Logout
+          <i className="bi bi-box-arrow-right"></i>
+          <span>Sign out</span>
         </button>
 
       </div>
 
-    </nav>
+    </header>
   );
 }
 

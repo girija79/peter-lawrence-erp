@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 
 function Clients() {
-
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -16,15 +15,8 @@ function Clients() {
   const [address, setAddress] = useState('');
   const [company, setCompany] = useState('');
 
-
-  // =========================
-  // FETCH CLIENTS
-  // =========================
-
   const fetchClients = async () => {
-
     try {
-
       const token = localStorage.getItem('token');
 
       const response = await axios.get(
@@ -40,31 +32,20 @@ function Clients() {
       setError('');
 
     } catch (err) {
-
       setError(
         err.response?.data?.message ||
         'Failed to load clients'
       );
-
     } finally {
-
       setLoading(false);
-
     }
   };
-
 
   useEffect(() => {
     fetchClients();
   }, []);
 
-
-  // =========================
-  // RESET FORM
-  // =========================
-
   const resetForm = () => {
-
     setFullName('');
     setEmail('');
     setPhone('');
@@ -73,21 +54,13 @@ function Clients() {
 
     setEditingClientId(null);
     setShowForm(false);
-
   };
 
-
-  // =========================
-  // CREATE / UPDATE CLIENT
-  // =========================
-
   const handleSubmit = async (e) => {
-
     e.preventDefault();
     setError('');
 
     try {
-
       const token = localStorage.getItem('token');
 
       const data = {
@@ -98,10 +71,7 @@ function Clients() {
         company
       };
 
-
-      // UPDATE
       if (editingClientId) {
-
         await axios.put(
           `http://localhost:5000/api/clients/${editingClientId}`,
           data,
@@ -111,12 +81,7 @@ function Clients() {
             }
           }
         );
-
-      }
-
-      // CREATE
-      else {
-
+      } else {
         await axios.post(
           'http://localhost:5000/api/clients',
           data,
@@ -126,31 +91,20 @@ function Clients() {
             }
           }
         );
-
       }
 
-
       resetForm();
-
       await fetchClients();
 
     } catch (err) {
-
       setError(
         err.response?.data?.message ||
         'Failed to save client'
       );
-
     }
   };
 
-
-  // =========================
-  // EDIT CLIENT
-  // =========================
-
   const handleEdit = (client) => {
-
     setEditingClientId(client._id);
 
     setFullName(client.fullName);
@@ -161,16 +115,9 @@ function Clients() {
 
     setError('');
     setShowForm(true);
-
   };
 
-
-  // =========================
-  // DELETE CLIENT
-  // =========================
-
   const handleDelete = async (client) => {
-
     const confirmed = window.confirm(
       `Are you sure you want to delete ${client.fullName}?`
     );
@@ -180,6 +127,7 @@ function Clients() {
     }
 
     try {
+      setError('');
 
       const token = localStorage.getItem('token');
 
@@ -199,399 +147,440 @@ function Clients() {
       );
 
     } catch (err) {
-
       setError(
         err.response?.data?.message ||
         'Failed to delete client'
       );
-
     }
   };
 
-
   return (
-    <div>
+    <div className="clients-page">
 
-      {/* ================= HEADER ================= */}
-
-      <div className="d-flex justify-content-between align-items-center mb-4">
+      {/* Page Header */}
+      <div className="page-header clients-header">
 
         <div>
+          <div className="page-kicker">
+            WORKSPACE · CLIENT RELATIONS
+          </div>
 
-          <h2 className="fw-bold mb-1">
-            Client Management
-          </h2>
+          <h1 className="page-title">
+            Clients
+          </h1>
 
-          <p className="text-muted mb-0">
-            Manage clients registered in the legal ERP system.
+          <p className="page-description">
+            Maintain client records and contact information
+            for the Peter Lawrence legal office.
           </p>
-
         </div>
 
-
         <button
-          className="btn btn-primary"
+          className="pl-button pl-button-primary"
           onClick={() => {
             setError('');
             resetForm();
             setShowForm(true);
           }}
         >
-
-          <i className="bi bi-person-plus me-2"></i>
-
-          Add Client
-
+          <i className="bi bi-person-plus"></i>
+          Add client
         </button>
 
       </div>
 
 
-      {/* ================= ERROR ================= */}
+      {/* Summary */}
+      <div className="users-summary clients-summary">
 
-      {error && (
-
-        <div className="alert alert-danger">
-
-          {error}
-
+        <div className="users-summary-item">
+          <span>Total clients</span>
+          <strong>{clients.length}</strong>
         </div>
 
+        <div className="users-summary-divider"></div>
+
+        <div className="users-summary-item">
+          <span>With company</span>
+          <strong>
+            {clients.filter(
+              (client) => client.company
+            ).length}
+          </strong>
+        </div>
+
+        <div className="users-summary-divider"></div>
+
+        <div className="users-summary-item">
+          <span>Individuals</span>
+          <strong>
+            {clients.filter(
+              (client) => !client.company
+            ).length}
+          </strong>
+        </div>
+
+      </div>
+
+
+      {/* Error */}
+      {error && (
+        <div className="pl-alert pl-alert-danger">
+          <i className="bi bi-exclamation-circle"></i>
+          <span>{error}</span>
+        </div>
       )}
 
 
-      {/* ================= FORM ================= */}
-
+      {/* Add / Edit Form */}
       {showForm && (
+        <div className="pl-form-panel">
 
-        <div className="card border-0 shadow-sm mb-4">
+          <div className="pl-form-header">
 
-          <div className="card-body">
+            <div>
+              <div className="page-kicker">
+                CLIENT RECORD
+              </div>
 
-            <div className="d-flex justify-content-between align-items-center mb-3">
-
-              <h5 className="fw-bold mb-0">
-
+              <h2>
                 {editingClientId
-                  ? 'Edit Client'
-                  : 'Add New Client'}
+                  ? 'Edit client'
+                  : 'Add client'}
+              </h2>
+            </div>
 
-              </h5>
+            <button
+              type="button"
+              className="pl-close-button"
+              onClick={resetForm}
+              aria-label="Close"
+            >
+              <i className="bi bi-x-lg"></i>
+            </button>
+
+          </div>
 
 
-              <button
-                type="button"
-                className="btn-close"
-                onClick={resetForm}
-              ></button>
+          <form onSubmit={handleSubmit}>
+
+            <div className="pl-form-grid">
+
+              {/* Full Name */}
+              <div className="pl-form-field">
+
+                <label htmlFor="client-name">
+                  Full name
+                </label>
+
+                <input
+                  id="client-name"
+                  type="text"
+                  placeholder="Enter full name"
+                  value={fullName}
+                  onChange={(e) =>
+                    setFullName(e.target.value)
+                  }
+                  required
+                />
+
+              </div>
+
+
+              {/* Email */}
+              <div className="pl-form-field">
+
+                <label htmlFor="client-email">
+                  Email address
+                </label>
+
+                <input
+                  id="client-email"
+                  type="email"
+                  placeholder="name@example.com"
+                  value={email}
+                  onChange={(e) =>
+                    setEmail(e.target.value)
+                  }
+                  required
+                />
+
+              </div>
+
+
+              {/* Phone */}
+              <div className="pl-form-field">
+
+                <label htmlFor="client-phone">
+                  Phone number
+                </label>
+
+                <input
+                  id="client-phone"
+                  type="text"
+                  placeholder="Enter phone number"
+                  value={phone}
+                  onChange={(e) =>
+                    setPhone(e.target.value)
+                  }
+                />
+
+              </div>
+
+
+              {/* Company */}
+              <div className="pl-form-field">
+
+                <label htmlFor="client-company">
+                  Company
+                </label>
+
+                <input
+                  id="client-company"
+                  type="text"
+                  placeholder="Company name (optional)"
+                  value={company}
+                  onChange={(e) =>
+                    setCompany(e.target.value)
+                  }
+                />
+
+              </div>
+
+
+              {/* Address */}
+              <div className="pl-form-field pl-form-field-full">
+
+                <label htmlFor="client-address">
+                  Address
+                </label>
+
+                <textarea
+                  id="client-address"
+                  rows="3"
+                  placeholder="Enter client address"
+                  value={address}
+                  onChange={(e) =>
+                    setAddress(e.target.value)
+                  }
+                ></textarea>
+
+              </div>
 
             </div>
 
 
-            <form onSubmit={handleSubmit}>
+            <div className="pl-form-actions">
 
-              <div className="row">
+              <button
+                type="submit"
+                className="pl-button pl-button-primary"
+              >
+                <i
+                  className={`bi ${
+                    editingClientId
+                      ? 'bi-check2'
+                      : 'bi-person-plus'
+                  }`}
+                ></i>
 
+                {editingClientId
+                  ? 'Save changes'
+                  : 'Create client'}
+              </button>
 
-                {/* FULL NAME */}
+              <button
+                type="button"
+                className="pl-button pl-button-secondary"
+                onClick={resetForm}
+              >
+                Cancel
+              </button>
 
-                <div className="col-md-6 mb-3">
+            </div>
 
-                  <label className="form-label">
-                    Full Name
-                  </label>
+          </form>
 
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Enter full name"
-                    value={fullName}
-                    onChange={(e) =>
-                      setFullName(e.target.value)
-                    }
-                    required
-                  />
-
-                </div>
-
-
-                {/* EMAIL */}
-
-                <div className="col-md-6 mb-3">
-
-                  <label className="form-label">
-                    Email
-                  </label>
-
-                  <input
-                    type="email"
-                    className="form-control"
-                    placeholder="Enter email"
-                    value={email}
-                    onChange={(e) =>
-                      setEmail(e.target.value)
-                    }
-                    required
-                  />
-
-                </div>
+        </div>
+      )}
 
 
-                {/* PHONE */}
+      {/* Loading */}
+      {loading && (
+        <div className="pl-loading">
 
-                <div className="col-md-6 mb-3">
+          <div className="pl-loading-line"></div>
 
-                  <label className="form-label">
-                    Phone
-                  </label>
+          <p>Loading client records...</p>
 
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Enter phone number"
-                    value={phone}
-                    onChange={(e) =>
-                      setPhone(e.target.value)
-                    }
-                  />
-
-                </div>
+        </div>
+      )}
 
 
-                {/* COMPANY */}
+      {/* Clients Table */}
+      {!loading && (
+        <div className="pl-table-panel">
 
-                <div className="col-md-6 mb-3">
+          <div className="pl-table-header">
 
-                  <label className="form-label">
-                    Company
-                  </label>
-
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Enter company name"
-                    value={company}
-                    onChange={(e) =>
-                      setCompany(e.target.value)
-                    }
-                  />
-
-                </div>
-
-
-                {/* ADDRESS */}
-
-                <div className="col-12 mb-3">
-
-                  <label className="form-label">
-                    Address
-                  </label>
-
-                  <textarea
-                    className="form-control"
-                    rows="3"
-                    placeholder="Enter address"
-                    value={address}
-                    onChange={(e) =>
-                      setAddress(e.target.value)
-                    }
-                  ></textarea>
-
-                </div>
-
+            <div>
+              <div className="page-kicker">
+                CLIENT DIRECTORY
               </div>
 
+              <h2>
+                Client records
+              </h2>
+            </div>
 
-              {/* BUTTONS */}
-
-              <div className="d-flex gap-2">
-
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                >
-
-                  <i
-                    className={`bi ${
-                      editingClientId
-                        ? 'bi-pencil'
-                        : 'bi-person-plus'
-                    } me-2`}
-                  ></i>
-
-                  {editingClientId
-                    ? 'Update Client'
-                    : 'Create Client'}
-
-                </button>
-
-
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={resetForm}
-                >
-
-                  Cancel
-
-                </button>
-
-              </div>
-
-            </form>
+            <span className="pl-record-count">
+              {clients.length}{' '}
+              {clients.length === 1
+                ? 'record'
+                : 'records'}
+            </span>
 
           </div>
 
-        </div>
 
-      )}
+          <div className="table-responsive">
 
+            <table className="pl-table">
 
-      {/* ================= LOADING ================= */}
-
-      {loading && (
-
-        <div className="text-center py-5">
-
-          <div
-            className="spinner-border text-primary"
-            role="status"
-          ></div>
-
-          <p className="text-muted mt-2">
-            Loading clients...
-          </p>
-
-        </div>
-
-      )}
+              <thead>
+                <tr>
+                  <th>CLIENT</th>
+                  <th>EMAIL</th>
+                  <th>PHONE</th>
+                  <th>COMPANY</th>
+                  <th className="text-end">ACTIONS</th>
+                </tr>
+              </thead>
 
 
-      {/* ================= TABLE ================= */}
+              <tbody>
 
-      {!loading && !error && (
-
-        <div className="card border-0 shadow-sm">
-
-          <div className="card-body">
-
-            <div className="table-responsive">
-
-              <table className="table table-hover align-middle">
-
-                <thead>
+                {clients.length === 0 ? (
 
                   <tr>
+                    <td
+                      colSpan="5"
+                      className="pl-empty-state"
+                    >
+                      <i className="bi bi-person-vcard"></i>
 
-                    <th>Client Name</th>
+                      <strong>No client records</strong>
 
-                    <th>Email</th>
-
-                    <th>Phone</th>
-
-                    <th>Company</th>
-
-                    <th>Action</th>
-
+                      <span>
+                        Add a client using the button above.
+                      </span>
+                    </td>
                   </tr>
 
-                </thead>
+                ) : (
+
+                  clients.map((client) => (
+
+                    <tr key={client._id}>
+
+                      {/* Client */}
+                      <td>
+
+                        <div className="user-cell">
+
+                          <div className="user-avatar">
+                            {client.fullName
+                              ?.charAt(0)
+                              ?.toUpperCase() || 'C'}
+                          </div>
+
+                          <div>
+                            <strong>
+                              {client.fullName}
+                            </strong>
+
+                            <span>
+                              Client
+                            </span>
+                          </div>
+
+                        </div>
+
+                      </td>
 
 
-                <tbody>
+                      {/* Email */}
+                      <td>
+                        <span className="user-email">
+                          {client.email}
+                        </span>
+                      </td>
 
-                  {clients.length === 0 ? (
 
-                    <tr>
+                      {/* Phone */}
+                      <td>
+                        <span className="user-email">
+                          {client.phone || '—'}
+                        </span>
+                      </td>
 
-                      <td
-                        colSpan="5"
-                        className="text-center py-4 text-muted"
-                      >
 
-                        No clients found.
+                      {/* Company */}
+                      <td>
+                        {client.company ? (
+                          <span className="client-company">
+                            {client.company}
+                          </span>
+                        ) : (
+                          <span className="client-empty-value">
+                            Individual
+                          </span>
+                        )}
+                      </td>
+
+
+                      {/* Actions */}
+                      <td>
+
+                        <div className="user-actions">
+
+                          <button
+                            className="user-action-button"
+                            title="Edit client"
+                            onClick={() =>
+                              handleEdit(client)
+                            }
+                          >
+                            <i className="bi bi-pencil"></i>
+                          </button>
+
+                          <button
+                            className="user-action-button user-action-delete"
+                            title="Delete client"
+                            onClick={() =>
+                              handleDelete(client)
+                            }
+                          >
+                            <i className="bi bi-trash3"></i>
+                          </button>
+
+                        </div>
 
                       </td>
 
                     </tr>
 
-                  ) : (
+                  ))
 
-                    clients.map((client) => (
+                )}
 
-                      <tr key={client._id}>
+              </tbody>
 
-                        <td>
-
-                          <div className="fw-semibold">
-
-                            {client.fullName}
-
-                          </div>
-
-                        </td>
-
-
-                        <td>
-                          {client.email}
-                        </td>
-
-
-                        <td>
-                          {client.phone || '-'}
-                        </td>
-
-
-                        <td>
-                          {client.company || '-'}
-                        </td>
-
-
-                        <td>
-
-                          <button
-                            className="btn btn-sm btn-outline-primary me-2"
-                            title="Edit Client"
-                            onClick={() =>
-                              handleEdit(client)
-                            }
-                          >
-
-                            <i className="bi bi-pencil"></i>
-
-                          </button>
-
-
-                          <button
-                            className="btn btn-sm btn-outline-danger"
-                            title="Delete Client"
-                            onClick={() =>
-                              handleDelete(client)
-                            }
-                          >
-
-                            <i className="bi bi-trash"></i>
-
-                          </button>
-
-                        </td>
-
-                      </tr>
-
-                    ))
-
-                  )}
-
-                </tbody>
-
-              </table>
-
-            </div>
+            </table>
 
           </div>
 
         </div>
-
       )}
 
     </div>

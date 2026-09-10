@@ -17,12 +17,18 @@ const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const clientRoutes = require('./routes/clientRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
+const lawyerRoutes = require('./routes/lawyerRoutes');
+const caseRoutes = require('./routes/caseRoutes');
+const appointmentRoutes = require('./routes/appointmentRoutes');
 
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/lawyers', lawyerRoutes);
+app.use('/api/cases', caseRoutes);
+app.use('/api/appointments', appointmentRoutes);
 
 // const authRoutes = require('./routes/authRoutes');
 // app.use('/api/auth', authRoutes);

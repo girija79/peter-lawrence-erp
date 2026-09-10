@@ -5,226 +5,291 @@ function Sidebar({ user }) {
   // Admin Menu
   const adminMenu = [
     {
-      name: 'Dashboard',
-      icon: 'bi-speedometer2',
-      path: '/dashboard'
+      section: 'WORKSPACE',
+      items: [
+        {
+          name: 'Overview',
+          icon: 'bi-grid-1x2',
+          path: '/dashboard'
+        },
+        {
+          name: 'Clients',
+          icon: 'bi-person-vcard',
+          path: '/clients'
+        },
+        {
+          name: 'Lawyers',
+          icon: 'bi-briefcase',
+          path: '/lawyers'
+        },
+        {
+          name: 'Cases',
+          icon: 'bi-folder2-open',
+          path: '/cases'
+        },
+        {
+          name: 'Appointments',
+          icon: 'bi-calendar3',
+          path: '/appointments'
+        }
+      ]
     },
     {
-      name: 'Users',
-      icon: 'bi-people',
-      path: '/users'
+      section: 'OPERATIONS',
+      items: [
+        {
+          name: 'Documents',
+          icon: 'bi-file-earmark-text',
+          path: '/documents'
+        },
+        {
+          name: 'Billing',
+          icon: 'bi-receipt',
+          path: '/billing'
+        },
+        {
+          name: 'Employees',
+          icon: 'bi-person-badge',
+          path: '/employees'
+        },
+        {
+          name: 'HR Management',
+          icon: 'bi-person-workspace',
+          path: '/hr'
+        }
+      ]
     },
     {
-      name: 'Clients',
-      icon: 'bi-person-vcard',
-      path: '/clients'
-    },
-    {
-      name: 'Lawyers',
-      icon: 'bi-briefcase',
-      path: '/lawyers'
-    },
-    {
-      name: 'Cases',
-      icon: 'bi-folder2-open',
-      path: '/cases'
-    },
-    {
-      name: 'Appointments',
-      icon: 'bi-calendar-check',
-      path: '/appointments'
-    },
-    {
-      name: 'Documents',
-      icon: 'bi-file-earmark-text',
-      path: '/documents'
-    },
-    {
-      name: 'Billing',
-      icon: 'bi-receipt',
-      path: '/billing'
-    },
-    {
-      name: 'Employees',
-      icon: 'bi-person-badge',
-      path: '/employees'
-    },
-    {
-      name: 'HR Management',
-      icon: 'bi-person-workspace',
-      path: '/hr'
-    },
-    {
-      name: 'Career Portal',
-      icon: 'bi-mortarboard',
-      path: '/careers'
-    },
-    {
-      name: 'Vendors',
-      icon: 'bi-building',
-      path: '/vendors'
-    },
-    {
-      name: 'Petty Cash',
-      icon: 'bi-cash-stack',
-      path: '/petty-cash'
-    },
-    {
-      name: 'Payroll',
-      icon: 'bi-wallet2',
-      path: '/payroll'
-    },
-    {
-      name: 'Reports',
-      icon: 'bi-bar-chart',
-      path: '/reports'
+      section: 'ADMINISTRATION',
+      items: [
+        {
+          name: 'Users',
+          icon: 'bi-people',
+          path: '/users'
+        },
+        {
+          name: 'Career Portal',
+          icon: 'bi-mortarboard',
+          path: '/careers'
+        },
+        {
+          name: 'Vendors',
+          icon: 'bi-building',
+          path: '/vendors'
+        },
+        {
+          name: 'Petty Cash',
+          icon: 'bi-cash-stack',
+          path: '/petty-cash'
+        },
+        {
+          name: 'Payroll',
+          icon: 'bi-wallet2',
+          path: '/payroll'
+        },
+        {
+          name: 'Reports',
+          icon: 'bi-bar-chart',
+          path: '/reports'
+        }
+      ]
     }
   ];
 
   // Lawyer Menu
   const lawyerMenu = [
     {
-      name: 'Dashboard',
-      icon: 'bi-speedometer2',
-      path: '/dashboard'
-    },
-    {
-      name: 'My Clients',
-      icon: 'bi-person-vcard',
-      path: '/clients'
-    },
-    {
-      name: 'My Cases',
-      icon: 'bi-folder2-open',
-      path: '/cases'
-    },
-    {
-      name: 'Appointments',
-      icon: 'bi-calendar-check',
-      path: '/appointments'
-    },
-    {
-      name: 'Documents',
-      icon: 'bi-file-earmark-text',
-      path: '/documents'
+      section: 'WORKSPACE',
+      items: [
+        {
+          name: 'Overview',
+          icon: 'bi-grid-1x2',
+          path: '/dashboard'
+        },
+        {
+          name: 'My Clients',
+          icon: 'bi-person-vcard',
+          path: '/clients'
+        },
+        {
+          name: 'My Cases',
+          icon: 'bi-folder2-open',
+          path: '/cases'
+        },
+        {
+          name: 'Appointments',
+          icon: 'bi-calendar3',
+          path: '/appointments'
+        },
+        {
+          name: 'Documents',
+          icon: 'bi-file-earmark-text',
+          path: '/documents'
+        }
+      ]
     }
   ];
 
   // Employee Menu
   const employeeMenu = [
     {
-      name: 'Dashboard',
-      icon: 'bi-speedometer2',
-      path: '/dashboard'
-    },
-    {
-      name: 'My Profile',
-      icon: 'bi-person',
-      path: '/profile'
-    },
-    {
-      name: 'Attendance',
-      icon: 'bi-calendar-check',
-      path: '/attendance'
-    },
-    {
-      name: 'Leave',
-      icon: 'bi-calendar-minus',
-      path: '/leave'
+      section: 'MY WORKSPACE',
+      items: [
+        {
+          name: 'Overview',
+          icon: 'bi-grid-1x2',
+          path: '/dashboard'
+        },
+        {
+          name: 'My Profile',
+          icon: 'bi-person',
+          path: '/profile'
+        },
+        {
+          name: 'Attendance',
+          icon: 'bi-calendar-check',
+          path: '/attendance'
+        },
+        {
+          name: 'Leave',
+          icon: 'bi-calendar-minus',
+          path: '/leave'
+        }
+      ]
     }
   ];
 
   // Client Menu
   const clientMenu = [
     {
-      name: 'Dashboard',
-      icon: 'bi-speedometer2',
-      path: '/dashboard'
-    },
-    {
-      name: 'My Profile',
-      icon: 'bi-person',
-      path: '/profile'
-    },
-    {
-      name: 'My Cases',
-      icon: 'bi-folder2-open',
-      path: '/cases'
-    },
-    {
-      name: 'Appointments',
-      icon: 'bi-calendar-check',
-      path: '/appointments'
-    },
-    {
-      name: 'Documents',
-      icon: 'bi-file-earmark-text',
-      path: '/documents'
-    },
-    {
-      name: 'Payments',
-      icon: 'bi-credit-card',
-      path: '/payments'
+      section: 'MY LEGAL MATTERS',
+      items: [
+        {
+          name: 'Overview',
+          icon: 'bi-grid-1x2',
+          path: '/dashboard'
+        },
+        {
+          name: 'My Profile',
+          icon: 'bi-person',
+          path: '/profile'
+        },
+        {
+          name: 'My Cases',
+          icon: 'bi-folder2-open',
+          path: '/cases'
+        },
+        {
+          name: 'Appointments',
+          icon: 'bi-calendar3',
+          path: '/appointments'
+        },
+        {
+          name: 'Documents',
+          icon: 'bi-file-earmark-text',
+          path: '/documents'
+        },
+        {
+          name: 'Payments',
+          icon: 'bi-credit-card',
+          path: '/payments'
+        }
+      ]
     }
   ];
 
   // Select menu according to logged-in user's role
-  let menuItems = [];
+  let menuSections = [];
 
   if (user?.role === 'admin') {
-    menuItems = adminMenu;
+    menuSections = adminMenu;
   } else if (user?.role === 'lawyer') {
-    menuItems = lawyerMenu;
+    menuSections = lawyerMenu;
   } else if (user?.role === 'employee') {
-    menuItems = employeeMenu;
+    menuSections = employeeMenu;
   } else if (user?.role === 'client') {
-    menuItems = clientMenu;
+    menuSections = clientMenu;
   }
 
   return (
-    <aside className="sidebar bg-dark text-white">
+    <aside className="sidebar">
 
-      {/* Sidebar Header */}
-      <div className="sidebar-header p-3">
+      {/* Brand */}
+      <div className="sidebar-header">
 
-        <h5 className="mb-1">
-          Peter Lawrence
-        </h5>
+        <div className="brand-mark">
+          PL
+        </div>
 
-        <small className="text-secondary">
-          Legal ERP & CRM
-        </small>
+        <div className="brand-content">
+          <h5>Peter Lawrence</h5>
+          <small>Legal ERP & CRM</small>
+        </div>
 
       </div>
 
-      <hr className="border-secondary" />
-
       {/* Navigation */}
-      <nav className="px-2">
+      <nav className="sidebar-navigation">
 
-        {menuItems.map((item) => (
-
-          <NavLink
-            key={item.path}
-            to={item.path}
-            className={({ isActive }) =>
-              `sidebar-link ${isActive ? 'active' : ''}`
-            }
+        {menuSections.map((section) => (
+          <div
+            className="sidebar-section"
+            key={section.section}
           >
 
-            <i
-              className={`bi ${item.icon} me-3`}
-            ></i>
+            <div className="sidebar-section-title">
+              {section.section}
+            </div>
 
-            <span>
-              {item.name}
-            </span>
+            <div className="sidebar-section-items">
 
-          </NavLink>
+              {section.items.map((item) => (
 
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  className={({ isActive }) =>
+                    `sidebar-link ${isActive ? 'active' : ''}`
+                  }
+                >
+
+                  <span className="sidebar-icon">
+                    <i className={`bi ${item.icon}`}></i>
+                  </span>
+
+                  <span className="sidebar-label">
+                    {item.name}
+                  </span>
+
+                </NavLink>
+
+              ))}
+
+            </div>
+
+          </div>
         ))}
 
       </nav>
+
+      {/* User Information */}
+      <div className="sidebar-user">
+
+        <div className="sidebar-user-avatar">
+          {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+        </div>
+
+        <div className="sidebar-user-info">
+          <div className="sidebar-user-name">
+            {user?.name || 'User'}
+          </div>
+
+          <div className="sidebar-user-role">
+            {user?.role || 'User'}
+          </div>
+        </div>
+
+      </div>
 
     </aside>
   );

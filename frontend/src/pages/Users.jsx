@@ -13,7 +13,6 @@ function Users() {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('client');
 
-  // Fetch users
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -34,7 +33,6 @@ function Users() {
         err.response?.data?.message ||
         'Failed to load users'
       );
-
     } finally {
       setLoading(false);
     }
@@ -44,7 +42,6 @@ function Users() {
     fetchUsers();
   }, []);
 
-  // Create / Update user
   const handleCreateUser = async (e) => {
     e.preventDefault();
     setError('');
@@ -52,7 +49,6 @@ function Users() {
     try {
       const token = localStorage.getItem('token');
 
-      // UPDATE USER
       if (editingUserId) {
         await axios.put(
           `http://localhost:5000/api/users/${editingUserId}`,
@@ -68,10 +64,7 @@ function Users() {
             }
           }
         );
-      }
-
-      // CREATE USER
-      else {
+      } else {
         await axios.post(
           'http://localhost:5000/api/users',
           {
@@ -88,19 +81,13 @@ function Users() {
         );
       }
 
-      // Clear form
       setName('');
       setEmail('');
       setPassword('');
       setRole('client');
-
-      // Exit edit mode
       setEditingUserId(null);
-
-      // Close form
       setShowForm(false);
 
-      // Refresh users
       fetchUsers();
 
     } catch (err) {
@@ -111,7 +98,6 @@ function Users() {
     }
   };
 
-  // Delete user
   const handleDeleteUser = async (user) => {
     const confirmDelete = window.confirm(
       `Are you sure you want to delete ${user.name}?`
@@ -135,7 +121,6 @@ function Users() {
         }
       );
 
-      // Remove deleted user from table
       setUsers((currentUsers) =>
         currentUsers.filter(
           (currentUser) => currentUser._id !== user._id
@@ -150,7 +135,6 @@ function Users() {
     }
   };
 
-  // Open form for adding a new user
   const handleAddUser = () => {
     setEditingUserId(null);
     setName('');
@@ -161,7 +145,6 @@ function Users() {
     setShowForm(true);
   };
 
-  // Open form for editing existing user
   const handleEditUser = (user) => {
     setEditingUserId(user._id);
     setName(user.name);
@@ -172,7 +155,6 @@ function Users() {
     setShowForm(true);
   };
 
-  // Close form
   const handleCloseForm = () => {
     setShowForm(false);
     setEditingUserId(null);
@@ -183,279 +165,396 @@ function Users() {
     setError('');
   };
 
-  return (
-    <div>
+  const getInitial = (name) => {
+    return name?.charAt(0)?.toUpperCase() || 'U';
+  };
 
-      {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
+  const getRoleClass = (role) => {
+    return `user-role-badge user-role-${role}`;
+  };
+
+  return (
+    <div className="users-page">
+
+      {/* Page Header */}
+      <div className="page-header users-header">
 
         <div>
-          <h2 className="fw-bold mb-1">
-            User Management
-          </h2>
+          <div className="page-kicker">
+            ADMINISTRATION · ACCESS CONTROL
+          </div>
 
-          <p className="text-muted mb-0">
-            Manage users registered in the legal ERP system.
+          <h1 className="page-title">
+            User Management
+          </h1>
+
+          <p className="page-description">
+            Manage accounts and access across the Peter Lawrence
+            legal office.
           </p>
         </div>
 
         <button
-          className="btn btn-primary"
+          className="pl-button pl-button-primary"
           onClick={handleAddUser}
         >
-          <i className="bi bi-person-plus me-2"></i>
-          Add User
+          <i className="bi bi-person-plus"></i>
+          Add user
         </button>
 
       </div>
 
+
+      {/* Summary */}
+      <div className="users-summary">
+
+        <div className="users-summary-item">
+          <span>Total users</span>
+          <strong>{users.length}</strong>
+        </div>
+
+        <div className="users-summary-divider"></div>
+
+        <div className="users-summary-item">
+          <span>Administrators</span>
+          <strong>
+            {users.filter((user) => user.role === 'admin').length}
+          </strong>
+        </div>
+
+        <div className="users-summary-divider"></div>
+
+        <div className="users-summary-item">
+          <span>Lawyers</span>
+          <strong>
+            {users.filter((user) => user.role === 'lawyer').length}
+          </strong>
+        </div>
+
+        <div className="users-summary-divider"></div>
+
+        <div className="users-summary-item">
+          <span>Clients</span>
+          <strong>
+            {users.filter((user) => user.role === 'client').length}
+          </strong>
+        </div>
+
+      </div>
+
+
       {/* Error */}
       {error && (
-        <div className="alert alert-danger">
-          {error}
+        <div className="pl-alert pl-alert-danger">
+          <i className="bi bi-exclamation-circle"></i>
+          <span>{error}</span>
         </div>
       )}
 
-      {/* Add / Edit User Form */}
+
+      {/* Add / Edit Form */}
       {showForm && (
-        <div className="card border-0 shadow-sm mb-4">
+        <div className="pl-form-panel">
 
-          <div className="card-body">
+          <div className="pl-form-header">
 
-            <div className="d-flex justify-content-between align-items-center mb-3">
+            <div>
+              <div className="page-kicker">
+                ACCOUNT CONFIGURATION
+              </div>
 
-              <h5 className="fw-bold mb-0">
+              <h2>
                 {editingUserId
-                  ? 'Edit User'
-                  : 'Add New User'}
-              </h5>
-
-              <button
-                type="button"
-                className="btn-close"
-                onClick={handleCloseForm}
-              ></button>
-
+                  ? 'Edit user'
+                  : 'Create user'}
+              </h2>
             </div>
 
-            <form onSubmit={handleCreateUser}>
-
-              <div className="row">
-
-                {/* Name */}
-                <div className="col-md-6 mb-3">
-
-                  <label className="form-label">
-                    Name
-                  </label>
-
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Enter full name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                  />
-
-                </div>
-
-                {/* Email */}
-                <div className="col-md-6 mb-3">
-
-                  <label className="form-label">
-                    Email
-                  </label>
-
-                  <input
-                    type="email"
-                    className="form-control"
-                    placeholder="Enter email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-
-                </div>
-
-                {/* Password */}
-                <div className="col-md-6 mb-3">
-
-                  <label className="form-label">
-                    Password
-                  </label>
-
-                  <input
-                    type="password"
-                    className="form-control"
-                    placeholder={
-                      editingUserId
-                        ? 'Leave blank to keep current password'
-                        : 'Enter password'
-                    }
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required={!editingUserId}
-                  />
-
-                  {editingUserId && (
-                    <small className="text-muted">
-                      Leave blank if you don't want to change the password.
-                    </small>
-                  )}
-
-                </div>
-
-                {/* Role */}
-                <div className="col-md-6 mb-3">
-
-                  <label className="form-label">
-                    Role
-                  </label>
-
-                  <select
-                    className="form-select"
-                    value={role}
-                    onChange={(e) => setRole(e.target.value)}
-                    required
-                  >
-                    <option value="client">
-                      Client
-                    </option>
-
-                    <option value="lawyer">
-                      Lawyer
-                    </option>
-
-                    <option value="employee">
-                      Employee
-                    </option>
-
-                    <option value="admin">
-                      Admin
-                    </option>
-                  </select>
-
-                </div>
-
-              </div>
-
-              <div className="d-flex gap-2">
-
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                >
-                  <i
-                    className={`bi ${
-                      editingUserId
-                        ? 'bi-pencil'
-                        : 'bi-person-plus'
-                    } me-2`}
-                  ></i>
-
-                  {editingUserId
-                    ? 'Update User'
-                    : 'Create User'}
-                </button>
-
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={handleCloseForm}
-                >
-                  Cancel
-                </button>
-
-              </div>
-
-            </form>
+            <button
+              type="button"
+              className="pl-close-button"
+              onClick={handleCloseForm}
+              aria-label="Close"
+            >
+              <i className="bi bi-x-lg"></i>
+            </button>
 
           </div>
 
+
+          <form onSubmit={handleCreateUser}>
+
+            <div className="pl-form-grid">
+
+              {/* Name */}
+              <div className="pl-form-field">
+
+                <label htmlFor="user-name">
+                  Full name
+                </label>
+
+                <input
+                  id="user-name"
+                  type="text"
+                  placeholder="Enter full name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+
+              </div>
+
+
+              {/* Email */}
+              <div className="pl-form-field">
+
+                <label htmlFor="user-email">
+                  Email address
+                </label>
+
+                <input
+                  id="user-email"
+                  type="email"
+                  placeholder="name@firm.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+
+              </div>
+
+
+              {/* Password */}
+              <div className="pl-form-field">
+
+                <label htmlFor="user-password">
+                  Password
+                </label>
+
+                <input
+                  id="user-password"
+                  type="password"
+                  placeholder={
+                    editingUserId
+                      ? 'Leave blank to keep current password'
+                      : 'Enter password'
+                  }
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required={!editingUserId}
+                />
+
+                {editingUserId && (
+                  <small>
+                    Leave blank to keep the existing password.
+                  </small>
+                )}
+
+              </div>
+
+
+              {/* Role */}
+              <div className="pl-form-field">
+
+                <label htmlFor="user-role">
+                  Access role
+                </label>
+
+                <select
+                  id="user-role"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  required
+                >
+                  <option value="client">Client</option>
+                  <option value="lawyer">Lawyer</option>
+                  <option value="employee">Employee</option>
+                  <option value="admin">Administrator</option>
+                </select>
+
+              </div>
+
+            </div>
+
+
+            <div className="pl-form-actions">
+
+              <button
+                type="submit"
+                className="pl-button pl-button-primary"
+              >
+                <i
+                  className={`bi ${
+                    editingUserId
+                      ? 'bi-check2'
+                      : 'bi-person-plus'
+                  }`}
+                ></i>
+
+                {editingUserId
+                  ? 'Save changes'
+                  : 'Create user'}
+              </button>
+
+              <button
+                type="button"
+                className="pl-button pl-button-secondary"
+                onClick={handleCloseForm}
+              >
+                Cancel
+              </button>
+
+            </div>
+
+          </form>
+
         </div>
       )}
+
 
       {/* Loading */}
       {loading && (
-        <div className="text-center py-5">
+        <div className="pl-loading">
 
-          <div
-            className="spinner-border text-primary"
-            role="status"
-          ></div>
+          <div className="pl-loading-line"></div>
 
-          <p className="text-muted mt-2">
-            Loading users...
-          </p>
+          <p>Loading user records...</p>
 
         </div>
       )}
 
-      {/* Users Table */}
-      {!loading && !error && (
-        <div className="card border-0 shadow-sm">
 
-          <div className="card-body">
+      {/* User Table */}
+      {!loading && (
+        <div className="pl-table-panel">
 
-            <div className="table-responsive">
+          <div className="pl-table-header">
 
-              <table className="table table-hover align-middle">
+            <div>
+              <div className="page-kicker">
+                DIRECTORY
+              </div>
 
-                <thead>
+              <h2>
+                Firm accounts
+              </h2>
+            </div>
+
+            <span className="pl-record-count">
+              {users.length} {users.length === 1 ? 'record' : 'records'}
+            </span>
+
+          </div>
+
+
+          <div className="table-responsive">
+
+            <table className="pl-table">
+
+              <thead>
+                <tr>
+                  <th>USER</th>
+                  <th>EMAIL</th>
+                  <th>ROLE</th>
+                  <th>CREATED</th>
+                  <th className="text-end">ACTIONS</th>
+                </tr>
+              </thead>
+
+              <tbody>
+
+                {users.length === 0 ? (
+
                   <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Role</th>
-                    <th>Created</th>
-                    <th>Action</th>
+                    <td
+                      colSpan="5"
+                      className="pl-empty-state"
+                    >
+                      <i className="bi bi-people"></i>
+
+                      <strong>No user records</strong>
+
+                      <span>
+                        Create the first firm account using
+                        the button above.
+                      </span>
+                    </td>
                   </tr>
-                </thead>
 
-                <tbody>
+                ) : (
 
-                  {users.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan="5"
-                        className="text-center py-4 text-muted"
-                      >
-                        No users found.
-                      </td>
-                    </tr>
-                  ) : (
+                  users.map((user) => (
 
-                    users.map((user) => (
-                      <tr key={user._id}>
+                    <tr key={user._id}>
 
-                        <td>
-                          <div className="fw-semibold">
-                            {user.name}
+                      {/* User */}
+                      <td>
+
+                        <div className="user-cell">
+
+                          <div className="user-avatar">
+                            {getInitial(user.name)}
                           </div>
-                        </td>
 
-                        <td>
+                          <div>
+                            <strong>
+                              {user.name}
+                            </strong>
+
+                            <span>
+                              Peter Lawrence
+                            </span>
+                          </div>
+
+                        </div>
+
+                      </td>
+
+
+                      {/* Email */}
+                      <td>
+                        <span className="user-email">
                           {user.email}
-                        </td>
+                        </span>
+                      </td>
 
-                        <td>
-                          <span className="badge bg-secondary text-capitalize">
-                            {user.role}
-                          </span>
-                        </td>
 
-                        <td>
+                      {/* Role */}
+                      <td>
+
+                        <span className={getRoleClass(user.role)}>
+                          {user.role === 'admin'
+                            ? 'Administrator'
+                            : user.role}
+                        </span>
+
+                      </td>
+
+
+                      {/* Created */}
+                      <td>
+
+                        <span className="user-created">
                           {new Date(
                             user.createdAt
-                          ).toLocaleDateString()}
-                        </td>
+                          ).toLocaleDateString('en-GB', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric'
+                          })}
+                        </span>
 
-                        <td>
+                      </td>
 
-                          {/* Edit */}
+
+                      {/* Actions */}
+                      <td>
+
+                        <div className="user-actions">
+
                           <button
-                            className="btn btn-sm btn-outline-primary me-2"
-                            title="Edit User"
+                            className="user-action-button"
+                            title="Edit user"
                             onClick={() =>
                               handleEditUser(user)
                             }
@@ -463,29 +562,29 @@ function Users() {
                             <i className="bi bi-pencil"></i>
                           </button>
 
-                          {/* Delete */}
                           <button
-                            className="btn btn-sm btn-outline-danger"
-                            title="Delete User"
+                            className="user-action-button user-action-delete"
+                            title="Delete user"
                             onClick={() =>
                               handleDeleteUser(user)
                             }
                           >
-                            <i className="bi bi-trash"></i>
+                            <i className="bi bi-trash3"></i>
                           </button>
 
-                        </td>
+                        </div>
 
-                      </tr>
-                    ))
+                      </td>
 
-                  )}
+                    </tr>
 
-                </tbody>
+                  ))
 
-              </table>
+                )}
 
-            </div>
+              </tbody>
+
+            </table>
 
           </div>
 

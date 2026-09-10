@@ -1,27 +1,36 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route } from "react-router-dom";
 
-import Login from './pages/auth/Login';
-import Register from './pages/auth/Register';
-import Dashboard from './pages/Dashboard';
-import Users from './pages/Users';
-import Clients from './pages/Clients';
+import Login from "./pages/auth/Login";
+import Register from "./pages/auth/Register";
 
-import ProtectedRoute from './routes/ProtectedRoute';
-import DashboardLayout from './layouts/DashboardLayout';
+import Dashboard from "./pages/Dashboard";
+import Users from "./pages/Users";
+import Clients from "./pages/Clients";
+import Lawyers from "./pages/Lawyers";
+import Cases from "./pages/Cases";
+import Appointments from "./pages/Appointments";
 
-import Unauthorized from './pages/Unauthorized';
+import ProtectedRoute from "./routes/ProtectedRoute";
+import DashboardLayout from "./layouts/DashboardLayout";
+
+import Unauthorized from "./pages/Unauthorized";
+
 function App() {
   return (
     <Routes>
-
-      {/* ==================== PUBLIC ROUTES ==================== */}
+      {/* =====================================================
+          PUBLIC ROUTES
+          ===================================================== */}
 
       <Route path="/login" element={<Login />} />
+
       <Route path="/register" element={<Register />} />
+
       <Route path="/unauthorized" element={<Unauthorized />} />
 
-
-      {/* ==================== PROTECTED ROUTES ==================== */}
+      {/* =====================================================
+          PROTECTED APPLICATION
+          ===================================================== */}
 
       <Route
         element={
@@ -30,36 +39,74 @@ function App() {
           </ProtectedRoute>
         }
       >
+        {/* -------------------------------------------------
+            DASHBOARD
+            Available to all authenticated users
+            ------------------------------------------------- */}
 
-        {/* Dashboard - All Logged-in Users */}
+        <Route path="/dashboard" element={<Dashboard />} />
+
+        {/* -------------------------------------------------
+            CLIENTS
+            Admin + Lawyer + Client
+            ------------------------------------------------- */}
+
         <Route
-          path="/dashboard"
-          element={<Dashboard />}
-        />
-
-
-        {/* Users - Admin Only */}
-        <Route
-          path="/users"
+          path="/clients"
           element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <Users />
+            <ProtectedRoute allowedRoles={["admin", "lawyer", "client"]}>
+              <Clients />
             </ProtectedRoute>
           }
         />
 
+        {/* -------------------------------------------------
+            USERS
+            Admin only
+            ------------------------------------------------- */}
+
+        <Route
+          path="/users"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <Users />
+            </ProtectedRoute>
+          }
+        />
       </Route>
 
-      <Route path="/clients" element={<Clients />} />
-
-
-      {/* ==================== DEFAULT ROUTE ==================== */}
-
       <Route
-        path="/"
-        element={<Login />}
+        path="/lawyers"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <Lawyers />
+          </ProtectedRoute>
+        }
       />
 
+      <Route
+        path="/cases"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <Cases />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/appointments"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <Appointments />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* =====================================================
+          DEFAULT ROUTE
+          ===================================================== */}
+
+      <Route path="/" element={<Login />} />
     </Routes>
   );
 }

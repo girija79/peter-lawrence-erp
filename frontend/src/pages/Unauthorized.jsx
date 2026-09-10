@@ -1,23 +1,32 @@
+
 function Unauthorized() {
   return (
-    <div className="container py-5">
-      <div className="text-center">
+    <div className="unauthorized-page">
+      <div className="unauthorized-content">
 
-        <i className="bi bi-shield-lock fs-1 text-danger"></i>
+        <div className="unauthorized-mark">
+          <i className="bi bi-shield-lock"></i>
+        </div>
 
-        <h2 className="fw-bold mt-3">
-          Access Denied
-        </h2>
+        <div className="unauthorized-kicker">
+          PETER LAW FIRM · ACCESS CONTROL
+        </div>
 
-        <p className="text-muted">
-          You do not have permission to access this page.
+        <h1 className="unauthorized-title">
+          Access Restricted
+        </h1>
+
+        <p className="unauthorized-description">
+          Your account does not have permission to access this section
+          of the legal office system.
         </p>
 
         <a
           href="/dashboard"
-          className="btn btn-primary"
+          className="pl-button pl-button-primary unauthorized-button"
         >
-          Back to Dashboard
+          <i className="bi bi-arrow-left"></i>
+          Return to Overview
         </a>
 
       </div>
@@ -26,3 +35,4 @@ function Unauthorized() {
 }
 
 export default Unauthorized;
+

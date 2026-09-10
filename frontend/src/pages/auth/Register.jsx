@@ -7,6 +7,7 @@ function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+
   const { register } = useContext(AuthContext);
   const navigate = useNavigate();
 
@@ -27,153 +28,249 @@ function Register() {
   };
 
   return (
-    <div
-      className="min-vh-100 d-flex align-items-center justify-content-center bg-light"
-      style={{ padding: '40px 20px' }}
-    >
-      <div
-        className="card border-0 shadow-sm"
-        style={{
-          width: '100%',
-          maxWidth: '450px',
-          borderRadius: '12px'
-        }}
-      >
-        <div className="card-body p-4 p-md-5">
+    <div className="auth-page">
 
-          {/* Logo / Brand */}
-          <div className="text-center mb-4">
+      {/* Left Branding Panel */}
+      <section className="auth-brand-panel">
 
-            <div
-              className="d-inline-flex align-items-center justify-content-center bg-dark text-white rounded-circle mb-3"
-              style={{
-                width: '55px',
-                height: '55px',
-                fontSize: '24px'
-              }}
-            >
-              <i className="bi bi-building"></i>
+        <div className="auth-brand">
+          <div className="auth-brand-mark">PL</div>
+
+          <div>
+            <div className="auth-brand-name">
+              Peter Lawrence
             </div>
 
-            <h2 className="fw-bold mb-1">
-              Peter Lawrence Legal CRM
-            </h2>
+            <div className="auth-brand-subtitle">
+              Legal ERP & CRM
+            </div>
+          </div>
+        </div>
 
-            <p className="text-muted mb-0">
-              Create your client account
+        <div className="auth-brand-content">
+          <div className="auth-kicker">
+            PETER LAW FIRM · BELGRADE
+          </div>
+
+          <h1>
+            Your legal
+            <br />
+            <em>matter starts here.</em>
+          </h1>
+
+          <p>
+            Create your client account to stay connected
+            with your legal matters, appointments,
+            documents and payment information.
+          </p>
+        </div>
+
+        <div className="auth-brand-footer">
+          <span>PRIVATE FIRM WORKSPACE</span>
+          <span>© Peter Lawrence</span>
+        </div>
+
+      </section>
+
+
+      {/* Registration Form Panel */}
+      <section className="auth-form-panel">
+
+        <div className="auth-form-container">
+
+          {/* Mobile Brand */}
+          <div className="auth-mobile-brand">
+            <div className="auth-brand-mark">PL</div>
+
+            <div>
+              <div className="auth-brand-name">
+                Peter Lawrence
+              </div>
+
+              <div className="auth-brand-subtitle">
+                Legal ERP & CRM
+              </div>
+            </div>
+          </div>
+
+
+          {/* Heading */}
+          <div className="auth-form-heading">
+
+            <span className="auth-form-kicker">
+              CLIENT REGISTRATION
+            </span>
+
+            <h2>Create your account.</h2>
+
+            <p>
+              Set up your client access to the firm workspace.
             </p>
 
           </div>
 
+
           {/* Error */}
           {error && (
-            <div className="alert alert-danger">
-              {error}
+            <div className="auth-error">
+              <i className="bi bi-exclamation-circle"></i>
+              <span>{error}</span>
             </div>
           )}
+
 
           {/* Registration Form */}
           <form onSubmit={handleSubmit}>
 
-            {/* Name */}
-            <div className="mb-3">
-              <label className="form-label fw-semibold">
-                Full Name
+            {/* Full Name */}
+            <div className="auth-field">
+
+              <label htmlFor="register-name">
+                Full name
               </label>
 
-              <div className="input-group">
-                <span className="input-group-text bg-white">
-                  <i className="bi bi-person"></i>
-                </span>
+              <div className="auth-input-wrapper">
+
+                <i className="bi bi-person"></i>
 
                 <input
+                  id="register-name"
                   type="text"
-                  className="form-control"
-                  placeholder="Enter your full name"
+                  placeholder="Your full name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
                 />
+
               </div>
+
             </div>
 
+
             {/* Email */}
-            <div className="mb-3">
-              <label className="form-label fw-semibold">
-                Email Address
+            <div className="auth-field">
+
+              <label htmlFor="register-email">
+                Email address
               </label>
 
-              <div className="input-group">
-                <span className="input-group-text bg-white">
-                  <i className="bi bi-envelope"></i>
-                </span>
+              <div className="auth-input-wrapper">
+
+                <i className="bi bi-envelope"></i>
 
                 <input
+                  id="register-email"
                   type="email"
-                  className="form-control"
-                  placeholder="Enter your email"
+                  placeholder="name@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
+
               </div>
+
             </div>
 
-            {/* Password */}
-            <div className="mb-4">
-              <label className="form-label fw-semibold">
-                Password
-              </label>
 
-              <div className="input-group">
-                <span className="input-group-text bg-white">
-                  <i className="bi bi-lock"></i>
+            {/* Password */}
+            <div className="auth-field">
+
+              <div className="auth-label-row">
+
+                <label htmlFor="register-password">
+                  Password
+                </label>
+
+                <span>
+                  Secure account access
                 </span>
 
+              </div>
+
+              <div className="auth-input-wrapper">
+
+                <i className="bi bi-lock"></i>
+
                 <input
+                  id="register-password"
                   type="password"
-                  className="form-control"
                   placeholder="Create a password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
+
               </div>
+
             </div>
 
-            {/* Register Button */}
+
+            {/* Account Type */}
+            <div className="auth-account-note">
+
+              <div className="auth-account-note-icon">
+                <i className="bi bi-person-vcard"></i>
+              </div>
+
+              <div>
+                <strong>Client account</strong>
+
+                <span>
+                  New public registrations are created as
+                  client accounts.
+                </span>
+              </div>
+
+            </div>
+
+
+            {/* Submit */}
             <button
               type="submit"
-              className="btn btn-dark w-100 py-2"
+              className="auth-submit"
             >
-              <i className="bi bi-person-plus me-2"></i>
-              Create Account
+              <span>Create client account</span>
+              <i className="bi bi-arrow-right"></i>
             </button>
 
           </form>
 
+
           {/* Login Link */}
-          <div className="text-center mt-4">
-            <span className="text-muted">
+          <div className="auth-register">
+
+            <span>
               Already have an account?
-            </span>{' '}
-            <Link
-              to="/login"
-              className="text-decoration-none fw-semibold"
-            >
-              Sign In
+            </span>
+
+            <Link to="/login">
+              Sign in
+              <i className="bi bi-arrow-up-right"></i>
             </Link>
+
           </div>
 
-          {/* Small Information */}
-          <div className="text-center mt-3">
-            <small className="text-muted">
-              New accounts are registered as Client accounts.
-            </small>
+
+          {/* Security */}
+          <div className="auth-security">
+
+            <i className="bi bi-shield-check"></i>
+
+            <div>
+              <strong>Protected workspace</strong>
+
+              <span>
+                Your access is controlled according to
+                your assigned role.
+              </span>
+            </div>
+
           </div>
 
         </div>
-      </div>
+
+      </section>
+
     </div>
   );
 }
