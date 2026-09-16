@@ -1,18 +1,15 @@
-const User = require('../models/User');
+const User = require("../models/User");
 
 // GET /api/users
 // Admin only
 const getUsers = async (req, res) => {
   try {
-    const users = await User.find()
-      .select('-password')
-      .sort({ createdAt: -1 });
+    const users = await User.find().select("-password").sort({ createdAt: -1 });
 
     res.status(200).json(users);
-
   } catch (err) {
     res.status(500).json({
-      message: 'Failed to fetch users'
+      message: "Failed to fetch users",
     });
   }
 };
@@ -25,20 +22,22 @@ const createUser = async (req, res) => {
 
     if (!name || !email || !password || !role) {
       return res.status(400).json({
-        message: 'Name, email, password and role are required'
+        message: "Name, email, password and role are required",
       });
     }
 
     const allowedRoles = [
-      'admin',
-      'lawyer',
-      'employee',
-      'client'
+      "admin",
+      "lawyer",
+      "hr",
+      "accountant",
+      "employee",
+      "client",
     ];
 
     if (!allowedRoles.includes(role)) {
       return res.status(400).json({
-        message: 'Invalid role'
+        message: "Invalid role",
       });
     }
 
@@ -46,7 +45,7 @@ const createUser = async (req, res) => {
 
     if (userExists) {
       return res.status(400).json({
-        message: 'User already exists'
+        message: "User already exists",
       });
     }
 
@@ -54,7 +53,7 @@ const createUser = async (req, res) => {
       name,
       email,
       password,
-      role
+      role,
     });
 
     res.status(201).json({
@@ -62,12 +61,11 @@ const createUser = async (req, res) => {
       name: user.name,
       email: user.email,
       role: user.role,
-      createdAt: user.createdAt
+      createdAt: user.createdAt,
     });
-
   } catch (err) {
     res.status(500).json({
-      message: err.message
+      message: err.message,
     });
   }
 };
@@ -80,26 +78,25 @@ const deleteUser = async (req, res) => {
 
     if (!user) {
       return res.status(404).json({
-        message: 'User not found'
+        message: "User not found",
       });
     }
 
     // Prevent admin from deleting their own account
     if (user._id.toString() === req.user._id.toString()) {
       return res.status(400).json({
-        message: 'You cannot delete your own account'
+        message: "You cannot delete your own account",
       });
     }
 
     await User.findByIdAndDelete(req.params.id);
 
     res.status(200).json({
-      message: 'User deleted successfully'
+      message: "User deleted successfully",
     });
-
   } catch (err) {
     res.status(500).json({
-      message: 'Failed to delete user'
+      message: "Failed to delete user",
     });
   }
 };
@@ -114,20 +111,22 @@ const updateUser = async (req, res) => {
 
     if (!user) {
       return res.status(404).json({
-        message: 'User not found'
+        message: "User not found",
       });
     }
 
     const allowedRoles = [
-      'admin',
-      'lawyer',
-      'employee',
-      'client'
+      "admin",
+      "lawyer",
+      "hr",
+      "accountant",
+      "employee",
+      "client",
     ];
 
     if (role && !allowedRoles.includes(role)) {
       return res.status(400).json({
-        message: 'Invalid role'
+        message: "Invalid role",
       });
     }
 
@@ -135,12 +134,12 @@ const updateUser = async (req, res) => {
     if (email && email !== user.email) {
       const emailExists = await User.findOne({
         email,
-        _id: { $ne: req.params.id }
+        _id: { $ne: req.params.id },
       });
 
       if (emailExists) {
         return res.status(400).json({
-          message: 'Email already exists'
+          message: "Email already exists",
         });
       }
     }
@@ -162,12 +161,11 @@ const updateUser = async (req, res) => {
       name: updatedUser.name,
       email: updatedUser.email,
       role: updatedUser.role,
-      updatedAt: updatedUser.updatedAt
+      updatedAt: updatedUser.updatedAt,
     });
-
   } catch (err) {
     res.status(500).json({
-      message: err.message
+      message: err.message,
     });
   }
 };
@@ -176,5 +174,5 @@ module.exports = {
   getUsers,
   createUser,
   deleteUser,
-  updateUser
+  updateUser,
 };

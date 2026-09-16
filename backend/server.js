@@ -20,7 +20,18 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 const lawyerRoutes = require('./routes/lawyerRoutes');
 const caseRoutes = require('./routes/caseRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
-
+const documentRoutes = require('./routes/documentRoutes');
+const vendorRoutes = require('./routes/vendorRoutes');
+const invoiceRoutes = require('./routes/invoiceRoutes');
+const clientPaymentRoutes = require('./routes/clientPaymentRoutes');
+const receiptRoutes = require('./routes/receiptRoutes');
+const employeeRoutes = require('./routes/employeeRoutes');
+const candidateRoutes = require('./routes/candidateRoutes');
+const careerRoutes = require('./routes/careerRoutes');
+const attendanceRoutes = require('./routes/attendanceRoutes');
+const leaveRoutes = require('./routes/leaveRoutes');
+const pettyCashRoutes = require('./routes/pettyCashRoutes');
+const payrollRoutes = require('./routes/payrollRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -29,9 +40,18 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/lawyers', lawyerRoutes);
 app.use('/api/cases', caseRoutes);
 app.use('/api/appointments', appointmentRoutes);
-
-// const authRoutes = require('./routes/authRoutes');
-// app.use('/api/auth', authRoutes);
+app.use('/api/documents', documentRoutes);
+app.use('/api/vendors', vendorRoutes);
+app.use('/api/invoices', invoiceRoutes);
+app.use('/api/client-payments', clientPaymentRoutes);
+app.use('/api/receipts', receiptRoutes);
+app.use('/api/employees', employeeRoutes);
+app.use('/api/candidates', candidateRoutes);
+app.use('/api/careers', careerRoutes);
+app.use('/api/attendance', attendanceRoutes);
+app.use('/api/leaves', leaveRoutes);
+app.use('/api/petty-cash', pettyCashRoutes);
+app.use('/api/payroll', payrollRoutes);
 
 const testRoutes = require('./routes/testRoutes');
 app.use('/api/test', testRoutes);
