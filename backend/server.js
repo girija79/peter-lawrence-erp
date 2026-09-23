@@ -32,6 +32,12 @@ const attendanceRoutes = require('./routes/attendanceRoutes');
 const leaveRoutes = require('./routes/leaveRoutes');
 const pettyCashRoutes = require('./routes/pettyCashRoutes');
 const payrollRoutes = require('./routes/payrollRoutes');
+const reportRoutes = require('./routes/reportRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+const cmsPageRoutes = require("./routes/cmsPageRoutes");
+const cmsServiceRoutes = require("./routes/cmsServiceRoutes");
+const cmsPostRoutes = require("./routes/cmsPostRoutes");
+const cmsInquiryRoutes = require("./routes/cmsInquiryRoutes");
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -52,6 +58,12 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/leaves', leaveRoutes);
 app.use('/api/petty-cash', pettyCashRoutes);
 app.use('/api/payroll', payrollRoutes);
+app.use('/api/reports', reportRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use("/api/cms-pages", cmsPageRoutes);
+app.use("/api/cms-services", cmsServiceRoutes);
+app.use("/api/cms-posts", cmsPostRoutes);
+app.use("/api/cms-inquiries", cmsInquiryRoutes);
 
 const testRoutes = require('./routes/testRoutes');
 app.use('/api/test', testRoutes);

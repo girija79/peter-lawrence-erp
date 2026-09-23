@@ -1,7 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import api from '../api/axios';
+import { AuthContext } from '../context/AuthContext';
 
 function Cases() {
+  const { user } = useContext(AuthContext);
+
+  const isAdmin = user?.role === 'admin';
+  const isLawyer = user?.role === 'lawyer';
+
   const [cases, setCases] = useState([]);
   const [clients, setClients] = useState([]);
   const [lawyers, setLawyers] = useState([]);
@@ -31,16 +37,23 @@ function Cases() {
       setLoading(true);
       setError('');
 
-      const [casesResponse, clientsResponse, lawyersResponse] =
-        await Promise.all([
-          api.get('/cases'),
-          api.get('/clients'),
-          api.get('/lawyers')
-        ]);
+      // Everyone who has access to this page can fetch cases.
+      const casesResponse = await api.get('/cases');
 
       setCases(casesResponse.data);
-      setClients(clientsResponse.data);
-      setLawyers(lawyersResponse.data);
+
+      // Only admin needs the complete client/lawyer directories
+      // because only admin can create/edit cases.
+      if (isAdmin) {
+        const [clientsResponse, lawyersResponse] =
+          await Promise.all([
+            api.get('/clients'),
+            api.get('/lawyers')
+          ]);
+
+        setClients(clientsResponse.data);
+        setLawyers(lawyersResponse.data);
+      }
     } catch (err) {
       console.error('Fetch Cases Error:', err);
 
@@ -54,8 +67,10 @@ function Cases() {
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (user) {
+      fetchData();
+    }
+  }, [user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -67,6 +82,8 @@ function Cases() {
   };
 
   const handleAdd = () => {
+    if (!isAdmin) return;
+
     setEditingCase(null);
 
     setFormData({
@@ -88,6 +105,8 @@ function Cases() {
   };
 
   const handleEdit = (legalCase) => {
+    if (!isAdmin) return;
+
     setEditingCase(legalCase);
 
     setFormData({
@@ -115,6 +134,8 @@ function Cases() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!isAdmin) return;
+
     try {
       setError('');
 
@@ -139,6 +160,8 @@ function Cases() {
   };
 
   const handleDelete = async (id) => {
+    if (!isAdmin) return;
+
     const confirmed = window.confirm(
       'Are you sure you want to delete this case?'
     );
@@ -200,8 +223,12 @@ function Cases() {
       <div className="page-container">
         <div className="empty-state">
           <i className="bi bi-hourglass-split"></i>
+
           <h3>Loading case register</h3>
-          <p>Please wait while case records are being loaded.</p>
+
+          <p>
+            Please wait while case records are being loaded.
+          </p>
         </div>
       </div>
     );
@@ -215,22 +242,28 @@ function Cases() {
         <div>
           <p className="eyebrow">LEGAL MATTERS</p>
 
-          <h1>Case Management</h1>
+          <h1>
+            {isLawyer ? 'My Cases' : 'Case Management'}
+          </h1>
 
           <p className="page-description">
-            Manage legal matters, client representation,
-            assigned lawyers and upcoming court proceedings.
+            {isLawyer
+              ? 'Review legal matters assigned to you, client representation and upcoming court proceedings.'
+              : 'Manage legal matters, client representation, assigned lawyers and upcoming court proceedings.'
+            }
           </p>
         </div>
 
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={handleAdd}
-        >
-          <i className="bi bi-folder-plus me-2"></i>
-          New Case
-        </button>
+        {isAdmin && (
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={handleAdd}
+          >
+            <i className="bi bi-folder-plus me-2"></i>
+            New Case
+          </button>
+        )}
       </div>
 
       {/* ERROR */}
@@ -246,7 +279,7 @@ function Cases() {
 
         <div className="summary-card">
           <div className="summary-label">
-            Total Cases
+            {isLawyer ? 'My Cases' : 'Total Cases'}
           </div>
 
           <div className="summary-value">
@@ -286,18 +319,22 @@ function Cases() {
 
       </div>
 
-      {/* ADD / EDIT FORM */}
-      {showForm && (
+      {/* ADMIN ADD / EDIT FORM */}
+      {isAdmin && showForm && (
         <div className="content-card lawyer-form-card">
 
           <div className="card-header">
             <div>
               <p className="eyebrow">
-                {editingCase ? 'CASE UPDATE' : 'CASE REGISTRATION'}
+                {editingCase
+                  ? 'CASE UPDATE'
+                  : 'CASE REGISTRATION'}
               </p>
 
               <h2>
-                {editingCase ? 'Edit Case' : 'Create New Case'}
+                {editingCase
+                  ? 'Edit Case'
+                  : 'Create New Case'}
               </h2>
             </div>
           </div>
@@ -546,9 +583,17 @@ function Cases() {
         <div className="card-header">
 
           <div>
-            <p className="eyebrow">CASE REGISTER</p>
+            <p className="eyebrow">
+              {isLawyer
+                ? 'ASSIGNED MATTERS'
+                : 'CASE REGISTER'}
+            </p>
 
-            <h2>Legal Cases</h2>
+            <h2>
+              {isLawyer
+                ? 'My Legal Cases'
+                : 'Legal Cases'}
+            </h2>
           </div>
 
           <span className="record-count">
@@ -560,14 +605,21 @@ function Cases() {
         {cases.length === 0 ? (
 
           <div className="empty-state">
+
             <i className="bi bi-folder2-open"></i>
 
-            <h3>No cases recorded</h3>
+            <h3>
+              {isLawyer
+                ? 'No cases assigned'
+                : 'No cases recorded'}
+            </h3>
 
             <p>
-              Create the first legal case to begin the
-              case register.
+              {isLawyer
+                ? 'Cases assigned to you will appear here.'
+                : 'Create the first legal case to begin the case register.'}
             </p>
+
           </div>
 
         ) : (
@@ -584,7 +636,12 @@ function Cases() {
                   <th>Category</th>
                   <th>Status</th>
                   <th>Next Hearing</th>
-                  <th className="text-end">Actions</th>
+
+                  {isAdmin && (
+                    <th className="text-end">
+                      Actions
+                    </th>
+                  )}
                 </tr>
               </thead>
 
@@ -646,35 +703,37 @@ function Cases() {
                         : '—'}
                     </td>
 
-                    <td>
+                    {isAdmin && (
+                      <td>
 
-                      <div className="table-actions">
+                        <div className="table-actions">
 
-                        <button
-                          type="button"
-                          className="btn btn-outline-secondary"
-                          title="Edit case"
-                          onClick={() =>
-                            handleEdit(legalCase)
-                          }
-                        >
-                          <i className="bi bi-pencil"></i>
-                        </button>
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary"
+                            title="Edit case"
+                            onClick={() =>
+                              handleEdit(legalCase)
+                            }
+                          >
+                            <i className="bi bi-pencil"></i>
+                          </button>
 
-                        <button
-                          type="button"
-                          className="btn btn-outline-danger"
-                          title="Delete case"
-                          onClick={() =>
-                            handleDelete(legalCase._id)
-                          }
-                        >
-                          <i className="bi bi-trash"></i>
-                        </button>
+                          <button
+                            type="button"
+                            className="btn btn-outline-danger"
+                            title="Delete case"
+                            onClick={() =>
+                              handleDelete(legalCase._id)
+                            }
+                          >
+                            <i className="bi bi-trash"></i>
+                          </button>
 
-                      </div>
+                        </div>
 
-                    </td>
+                      </td>
+                    )}
 
                   </tr>
 

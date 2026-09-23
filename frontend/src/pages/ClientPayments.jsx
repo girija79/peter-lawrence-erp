@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import api from "../api/axios";
+import { AuthContext } from "../context/AuthContext";
 
 const initialForm = {
   paymentNumber: "",
@@ -14,6 +15,10 @@ const initialForm = {
 };
 
 function ClientPayments() {
+  const { user } = useContext(AuthContext);
+
+  const isAdmin = user?.role === "admin";
+  const isAccountant = user?.role === "accountant";
   const [payments, setPayments] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [clients, setClients] = useState([]);
@@ -321,236 +326,242 @@ function ClientPayments() {
         </div>
       </div>
 
-      <div className="card lawyer-form-card">
-        <div className="card-header">
-          <div>
-            <h2>
-              {editingId ? "Edit Client Payment" : "Record Client Payment"}
-            </h2>
+      {(isAdmin || isAccountant) && (
+        <div className="card lawyer-form-card">
+          <div className="card-header">
+            <div>
+              <h2>
+                {editingId ? "Edit Client Payment" : "Record Client Payment"}
+              </h2>
 
-            <p>
-              {editingId
-                ? "Update the selected payment transaction."
-                : "Record a payment received against an issued client invoice."}
-            </p>
+              <p>
+                {editingId
+                  ? "Update the selected payment transaction."
+                  : "Record a payment received against an issued client invoice."}
+              </p>
+            </div>
           </div>
-        </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-grid">
-            <div>
-              <label className="form-label">Payment Number</label>
-
-              <input
-                type="text"
-                name="paymentNumber"
-                className="form-control"
-                placeholder="PAY-2026-002"
-                value={form.paymentNumber}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div>
-              <label className="form-label">Payment Date</label>
-
-              <input
-                type="date"
-                name="paymentDate"
-                className="form-control"
-                value={form.paymentDate}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div>
-              <label className="form-label">Invoice</label>
-
-              <select
-                name="invoiceId"
-                className="form-select"
-                value={form.invoiceId}
-                onChange={handleChange}
-              >
-                <option value="">Select invoice</option>
-
-                {invoices.map((invoice) => (
-                  <option key={invoice._id} value={invoice._id}>
-                    {invoice.invoiceNumber} — ₹
-                    {formatCurrency(invoice.totalAmount)}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="form-label">Client</label>
-
-              <select
-                name="clientId"
-                className="form-select"
-                value={form.clientId}
-                onChange={handleChange}
-              >
-                <option value="">Select client</option>
-
-                {clients.map((client) => (
-                  <option key={client._id} value={client._id}>
-                    {client.fullName}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="form-label">Amount</label>
-
-              <div className="input-group">
-                <span className="input-group-text">₹</span>
+          <form onSubmit={handleSubmit}>
+            <div className="form-grid">
+              <div>
+                <label className="form-label">Payment Number</label>
 
                 <input
-                  type="number"
-                  name="amount"
+                  type="text"
+                  name="paymentNumber"
                   className="form-control"
-                  min="0"
-                  step="0.01"
-                  placeholder="20000"
-                  value={form.amount}
+                  placeholder="PAY-2026-002"
+                  value={form.paymentNumber}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div>
+                <label className="form-label">Payment Date</label>
+
+                <input
+                  type="date"
+                  name="paymentDate"
+                  className="form-control"
+                  value={form.paymentDate}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div>
+                <label className="form-label">Invoice</label>
+
+                <select
+                  name="invoiceId"
+                  className="form-select"
+                  value={form.invoiceId}
+                  onChange={handleChange}
+                >
+                  <option value="">Select invoice</option>
+
+                  {invoices.map((invoice) => (
+                    <option key={invoice._id} value={invoice._id}>
+                      {invoice.invoiceNumber} — ₹
+                      {formatCurrency(invoice.totalAmount)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="form-label">Client</label>
+
+                <select
+                  name="clientId"
+                  className="form-select"
+                  value={form.clientId}
+                  onChange={handleChange}
+                >
+                  <option value="">Select client</option>
+
+                  {clients.map((client) => (
+                    <option key={client._id} value={client._id}>
+                      {client.fullName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="form-label">Amount</label>
+
+                <div className="input-group">
+                  <span className="input-group-text">₹</span>
+
+                  <input
+                    type="number"
+                    name="amount"
+                    className="form-control"
+                    min="0"
+                    step="0.01"
+                    placeholder="20000"
+                    value={form.amount}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="form-label">Payment Method</label>
+
+                <select
+                  name="paymentMethod"
+                  className="form-select"
+                  value={form.paymentMethod}
+                  onChange={handleChange}
+                >
+                  <option value="Bank Transfer">Bank Transfer</option>
+
+                  <option value="Cash">Cash</option>
+
+                  <option value="Card">Card</option>
+
+                  <option value="Online Payment">Online Payment</option>
+
+                  <option value="Cheque">Cheque</option>
+
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="form-label">Transaction Reference</label>
+
+                <input
+                  type="text"
+                  name="transactionReference"
+                  className="form-control"
+                  placeholder="Bank / transaction reference"
+                  value={form.transactionReference}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div>
+                <label className="form-label">Status</label>
+
+                <select
+                  name="status"
+                  className="form-select"
+                  value={form.status}
+                  onChange={handleChange}
+                >
+                  <option value="Completed">Completed</option>
+
+                  <option value="Pending">Pending</option>
+
+                  <option value="Failed">Failed</option>
+
+                  <option value="Refunded">Refunded</option>
+                </select>
+              </div>
+
+              <div className="form-grid-full">
+                <label className="form-label">Notes</label>
+
+                <textarea
+                  name="notes"
+                  className="form-control"
+                  rows="3"
+                  placeholder="Payment notes or reconciliation remarks"
+                  value={form.notes}
                   onChange={handleChange}
                 />
               </div>
             </div>
 
-            <div>
-              <label className="form-label">Payment Method</label>
+            {selectedInvoice && (
+              <div className="mt-4 p-3 border">
+                <div className="row">
+                  <div className="col-md-4">
+                    <small className="text-muted d-block">Invoice</small>
 
-              <select
-                name="paymentMethod"
-                className="form-select"
-                value={form.paymentMethod}
-                onChange={handleChange}
-              >
-                <option value="Bank Transfer">Bank Transfer</option>
+                    <strong>{selectedInvoice.invoiceNumber}</strong>
+                  </div>
 
-                <option value="Cash">Cash</option>
+                  <div className="col-md-4">
+                    <small className="text-muted d-block">Invoice Total</small>
 
-                <option value="Card">Card</option>
+                    <strong>
+                      ₹{formatCurrency(selectedInvoice.totalAmount)}
+                    </strong>
+                  </div>
 
-                <option value="Online Payment">Online Payment</option>
+                  <div className="col-md-4">
+                    <small className="text-muted d-block">Invoice Status</small>
 
-                <option value="Cheque">Cheque</option>
-
-                <option value="Other">Other</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="form-label">Transaction Reference</label>
-
-              <input
-                type="text"
-                name="transactionReference"
-                className="form-control"
-                placeholder="Bank / transaction reference"
-                value={form.transactionReference}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div>
-              <label className="form-label">Status</label>
-
-              <select
-                name="status"
-                className="form-select"
-                value={form.status}
-                onChange={handleChange}
-              >
-                <option value="Completed">Completed</option>
-
-                <option value="Pending">Pending</option>
-
-                <option value="Failed">Failed</option>
-
-                <option value="Refunded">Refunded</option>
-              </select>
-            </div>
-
-            <div className="form-grid-full">
-              <label className="form-label">Notes</label>
-
-              <textarea
-                name="notes"
-                className="form-control"
-                rows="3"
-                placeholder="Payment notes or reconciliation remarks"
-                value={form.notes}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-
-          {selectedInvoice && (
-            <div className="mt-4 p-3 border">
-              <div className="row">
-                <div className="col-md-4">
-                  <small className="text-muted d-block">Invoice</small>
-
-                  <strong>{selectedInvoice.invoiceNumber}</strong>
-                </div>
-
-                <div className="col-md-4">
-                  <small className="text-muted d-block">Invoice Total</small>
-
-                  <strong>
-                    ₹{formatCurrency(selectedInvoice.totalAmount)}
-                  </strong>
-                </div>
-
-                <div className="col-md-4">
-                  <small className="text-muted d-block">Invoice Status</small>
-
-                  <span
-                    className={`status-badge ${getStatusClass(
-                      selectedInvoice.status,
-                    )}`}
-                  >
-                    {selectedInvoice.status}
-                  </span>
+                    <span
+                      className={`status-badge ${getStatusClass(
+                        selectedInvoice.status,
+                      )}`}
+                    >
+                      {selectedInvoice.status}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-
-          <div className="form-actions">
-            {editingId && (
-              <button
-                type="button"
-                className="btn btn-outline-secondary"
-                onClick={resetForm}
-                disabled={saving}
-              >
-                Cancel
-              </button>
             )}
 
-            <button type="submit" className="btn btn-primary" disabled={saving}>
-              {saving ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-2"></span>
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <i className="bi bi-check2 me-2"></i>
-
-                  {editingId ? "Update Payment" : "Record Payment"}
-                </>
+            <div className="form-actions">
+              {editingId && (
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={resetForm}
+                  disabled={saving}
+                >
+                  Cancel
+                </button>
               )}
-            </button>
-          </div>
-        </form>
-      </div>
+
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={saving}
+              >
+                {saving ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2"></span>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <i className="bi bi-check2 me-2"></i>
+
+                    {editingId ? "Update Payment" : "Record Payment"}
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       <div className="card">
         <div className="card-header">
@@ -672,14 +683,16 @@ function ClientPayments() {
                           <i className="bi bi-pencil"></i>
                         </button>
 
-                        <button
-                          type="button"
-                          className="btn btn-outline-danger"
-                          title="Delete payment"
-                          onClick={() => handleDelete(payment._id)}
-                        >
-                          <i className="bi bi-trash"></i>
-                        </button>
+                        {isAdmin && (
+                          <button
+                            type="button"
+                            className="btn btn-outline-danger"
+                            title="Delete payment"
+                            onClick={() => handleDelete(payment._id)}
+                          >
+                            <i className="bi bi-trash"></i>
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

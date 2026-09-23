@@ -17,14 +17,14 @@ const router = express.Router();
 router.get(
   '/',
   protect,
-  authorize('admin'),
+  authorize('admin' , 'lawyer'),
   getCases
 );
 
 router.get(
   '/:id',
   protect,
-  authorize('admin'),
+  authorize('admin' , 'lawyer'),
   getCaseById
 );
 

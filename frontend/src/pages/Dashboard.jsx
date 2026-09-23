@@ -1,70 +1,66 @@
+import { useContext, useEffect, useState } from "react";
 
-import { useContext, useEffect, useState } from 'react';
-
-import api from '../api/axios';
-import { AuthContext } from '../context/AuthContext';
+import api from "../api/axios";
+import { AuthContext } from "../context/AuthContext";
 
 function Dashboard() {
   const { user } = useContext(AuthContext);
 
   const [stats, setStats] = useState(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    if (user?.role === 'admin') {
+    if (user?.role === "admin") {
       fetchAdminStats();
     }
   }, [user]);
 
   const fetchAdminStats = async () => {
     try {
-      const res = await api.get('/dashboard/stats');
+      const res = await api.get("/dashboard/stats");
       setStats(res.data);
     } catch (err) {
       setError(
-        err.response?.data?.message ||
-        'Unable to load dashboard statistics.'
+        err.response?.data?.message || "Unable to load dashboard statistics.",
       );
     }
   };
 
-  const firstName = user?.name?.split(' ')[0] || 'there';
+  const firstName = user?.name?.split(" ")[0] || "there";
 
   const roleLabel = {
-    admin: 'Administrator',
-    lawyer: 'Lawyer',
-    employee: 'Employee',
-    client: 'Client'
+    admin: "Administrator",
+    lawyer: "Lawyer",
+    hr: "HR",
+    accountant: "Accountant",
+    employee: "Employee",
+    client: "Client",
   };
 
   const renderAdminDashboard = () => (
     <>
+      {/* =====================================================
+          FIRM OVERVIEW
+          ===================================================== */}
+
       <section className="dashboard-section">
         <div className="dashboard-section-heading">
           <div>
-            <div className="dashboard-kicker">
-              FIRM OVERVIEW
-            </div>
+            <div className="dashboard-kicker">FIRM OVERVIEW</div>
 
-            <h2 className="dashboard-section-title">
-              Key Figures
-            </h2>
+            <h2 className="dashboard-section-title">Key Figures</h2>
           </div>
 
-          <span className="dashboard-section-note">
-            Current system records
-          </span>
+          <span className="dashboard-section-note">Current system records</span>
         </div>
 
         <div className="dashboard-stat-grid">
-
+          {/* CLIENTS */}
           <div className="dashboard-stat">
-            <div className="dashboard-stat-label">
-              CLIENTS
-            </div>
+            <div className="dashboard-stat-label">CLIENTS</div>
 
             <div className="dashboard-stat-value">
-              {stats?.totalClients ?? '—'}
+              {stats?.totalClients ?? "—"}
             </div>
 
             <div className="dashboard-stat-description">
@@ -72,14 +68,12 @@ function Dashboard() {
             </div>
           </div>
 
-
+          {/* LAWYERS */}
           <div className="dashboard-stat">
-            <div className="dashboard-stat-label">
-              LAWYERS
-            </div>
+            <div className="dashboard-stat-label">LAWYERS</div>
 
             <div className="dashboard-stat-value">
-              {stats?.totalLawyers ?? '—'}
+              {stats?.totalLawyers ?? "—"}
             </div>
 
             <div className="dashboard-stat-description">
@@ -87,14 +81,38 @@ function Dashboard() {
             </div>
           </div>
 
-
+          {/* HR */}
           <div className="dashboard-stat">
-            <div className="dashboard-stat-label">
-              EMPLOYEES
-            </div>
+            <div className="dashboard-stat-label">HR</div>
 
             <div className="dashboard-stat-value">
-              {stats?.totalEmployees ?? '—'}
+              {stats?.totalHR ?? "—"}
+            </div>
+
+            <div className="dashboard-stat-description">
+              Human resources accounts
+            </div>
+          </div>
+
+          {/* ACCOUNTANTS */}
+          <div className="dashboard-stat">
+            <div className="dashboard-stat-label">ACCOUNTANTS</div>
+
+            <div className="dashboard-stat-value">
+              {stats?.totalAccountants ?? "—"}
+            </div>
+
+            <div className="dashboard-stat-description">
+              Finance and accounting accounts
+            </div>
+          </div>
+
+          {/* EMPLOYEES */}
+          <div className="dashboard-stat">
+            <div className="dashboard-stat-label">EMPLOYEES</div>
+
+            <div className="dashboard-stat-value">
+              {stats?.totalEmployees ?? "—"}
             </div>
 
             <div className="dashboard-stat-description">
@@ -102,28 +120,141 @@ function Dashboard() {
             </div>
           </div>
 
-
+          {/* ADMINISTRATORS */}
           <div className="dashboard-stat">
-            <div className="dashboard-stat-label">
-              SYSTEM USERS
-            </div>
+            <div className="dashboard-stat-label">ADMINISTRATORS</div>
 
             <div className="dashboard-stat-value">
-              {stats?.totalUsers ?? '—'}
+              {stats?.totalAdmins ?? "—"}
             </div>
 
             <div className="dashboard-stat-description">
-              Registered platform accounts
+              Administrative accounts
             </div>
           </div>
+        </div>
 
+        {/* SYSTEM USERS — PLATFORM LEVEL */}
+        <div className="dashboard-system-users">
+          <div className="dashboard-system-users-content">
+            <div>
+              <div className="dashboard-stat-label">SYSTEM USERS</div>
+
+              <div className="dashboard-system-users-description">
+                Total registered platform accounts across all roles
+              </div>
+            </div>
+
+            <div className="dashboard-system-users-value">
+              {stats?.totalUsers ?? "—"}
+            </div>
+          </div>
         </div>
       </section>
 
 
+      {/* =====================================================
+          LEGAL & FINANCIAL OPERATIONS
+          ===================================================== */}
+
+      <section className="dashboard-section dashboard-operations-section">
+
+        <div className="dashboard-section-heading">
+          <div>
+            <div className="dashboard-kicker">
+              LEGAL & FINANCIAL OPERATIONS
+            </div>
+
+            <h2 className="dashboard-section-title">
+              Operational Summary
+            </h2>
+          </div>
+
+          <span className="dashboard-section-note">
+            Current operational indicators
+          </span>
+        </div>
+
+        <div className="dashboard-stat-grid dashboard-stat-grid-four">
+
+          {/* ACTIVE CASES */}
+          <div className="dashboard-stat">
+            <div className="dashboard-stat-label">
+              ACTIVE CASES
+            </div>
+
+            <div className="dashboard-stat-value">
+              {stats?.activeCases ?? "—"}
+            </div>
+
+            <div className="dashboard-stat-description">
+              Currently active legal matters
+            </div>
+          </div>
+
+
+          {/* UPCOMING HEARINGS */}
+          <div className="dashboard-stat">
+            <div className="dashboard-stat-label">
+              UPCOMING HEARINGS
+            </div>
+
+            <div className="dashboard-stat-value">
+              {stats?.upcomingHearings ?? "—"}
+            </div>
+
+            <div className="dashboard-stat-description">
+              Scheduled future case hearings
+            </div>
+          </div>
+
+
+          {/* OUTSTANDING BILLING */}
+          <div className="dashboard-stat">
+            <div className="dashboard-stat-label">
+              OUTSTANDING BILLING
+            </div>
+
+            <div className="dashboard-stat-value">
+              {stats?.outstandingBilling != null
+                ? `₹${stats.outstandingBilling.toLocaleString("en-IN")}`
+                : "—"}
+            </div>
+
+            <div className="dashboard-stat-description">
+              Unpaid issued and overdue invoices
+            </div>
+          </div>
+
+
+          {/* PENDING LEAVE REQUESTS */}
+          <div className="dashboard-stat">
+            <div className="dashboard-stat-label">
+              PENDING LEAVE REQUESTS
+            </div>
+
+            <div className="dashboard-stat-value">
+              {stats?.pendingLeaves ?? "—"}
+            </div>
+
+            <div className="dashboard-stat-description">
+              Leave requests awaiting review
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+
+      {/* =====================================================
+          ADMIN WORKSPACE
+          ===================================================== */}
+
       <section className="dashboard-lower-grid">
 
         <div className="dashboard-panel">
+
           <div className="dashboard-panel-header">
             <div>
               <div className="dashboard-kicker">
@@ -149,6 +280,7 @@ function Dashboard() {
               </div>
             </div>
 
+
             <div className="workspace-row">
               <div className="workspace-icon">
                 <i className="bi bi-folder2-open"></i>
@@ -159,6 +291,7 @@ function Dashboard() {
                 <span>Track legal matters and proceedings</span>
               </div>
             </div>
+
 
             <div className="workspace-row">
               <div className="workspace-icon">
@@ -176,6 +309,7 @@ function Dashboard() {
 
 
         <div className="dashboard-panel">
+
           <div className="dashboard-panel-header">
             <div>
               <div className="dashboard-kicker">
@@ -195,15 +329,20 @@ function Dashboard() {
               <strong>Peter Law Firm</strong>
             </div>
 
+
             <div className="dashboard-info-row">
               <span>Location</span>
               <strong>Belgrade, Serbia</strong>
             </div>
 
+
             <div className="dashboard-info-row">
               <span>Account</span>
-              <strong>{roleLabel[user?.role] || 'User'}</strong>
+              <strong>
+                {roleLabel[user?.role] || "User"}
+              </strong>
             </div>
+
 
             <div className="dashboard-info-row">
               <span>Access level</span>
@@ -303,6 +442,7 @@ function Dashboard() {
       <section className="dashboard-lower-grid">
 
         <div className="dashboard-panel">
+
           <div className="dashboard-panel-header">
             <div>
               <div className="dashboard-kicker">
@@ -328,6 +468,7 @@ function Dashboard() {
               </div>
             </div>
 
+
             <div className="workspace-row">
               <div className="workspace-icon">
                 <i className="bi bi-folder2-open"></i>
@@ -338,6 +479,7 @@ function Dashboard() {
                 <span>Review your assigned legal matters</span>
               </div>
             </div>
+
 
             <div className="workspace-row">
               <div className="workspace-icon">
@@ -355,6 +497,7 @@ function Dashboard() {
 
 
         <div className="dashboard-panel">
+
           <div className="dashboard-panel-header">
             <div>
               <div className="dashboard-kicker">
@@ -374,15 +517,18 @@ function Dashboard() {
               <strong>{user?.name}</strong>
             </div>
 
+
             <div className="dashboard-info-row">
               <span>Role</span>
               <strong>Lawyer</strong>
             </div>
 
+
             <div className="dashboard-info-row">
               <span>Office</span>
               <strong>Peter Law Firm</strong>
             </div>
+
 
             <div className="dashboard-info-row">
               <span>Location</span>
@@ -482,6 +628,7 @@ function Dashboard() {
       <section className="dashboard-lower-grid">
 
         <div className="dashboard-panel">
+
           <div className="dashboard-panel-header">
             <div>
               <div className="dashboard-kicker">
@@ -507,6 +654,7 @@ function Dashboard() {
               </div>
             </div>
 
+
             <div className="workspace-row">
               <div className="workspace-icon">
                 <i className="bi bi-calendar-check"></i>
@@ -517,6 +665,7 @@ function Dashboard() {
                 <span>Review your attendance records</span>
               </div>
             </div>
+
 
             <div className="workspace-row">
               <div className="workspace-icon">
@@ -534,6 +683,7 @@ function Dashboard() {
 
 
         <div className="dashboard-panel">
+
           <div className="dashboard-panel-header">
             <div>
               <div className="dashboard-kicker">
@@ -553,15 +703,18 @@ function Dashboard() {
               <strong>{user?.name}</strong>
             </div>
 
+
             <div className="dashboard-info-row">
               <span>Role</span>
               <strong>Employee</strong>
             </div>
 
+
             <div className="dashboard-info-row">
               <span>Office</span>
               <strong>Peter Law Firm</strong>
             </div>
+
 
             <div className="dashboard-info-row">
               <span>Location</span>
@@ -661,6 +814,7 @@ function Dashboard() {
       <section className="dashboard-lower-grid">
 
         <div className="dashboard-panel">
+
           <div className="dashboard-panel-header">
             <div>
               <div className="dashboard-kicker">
@@ -686,6 +840,7 @@ function Dashboard() {
               </div>
             </div>
 
+
             <div className="workspace-row">
               <div className="workspace-icon">
                 <i className="bi bi-calendar3"></i>
@@ -696,6 +851,7 @@ function Dashboard() {
                 <span>View scheduled appointments</span>
               </div>
             </div>
+
 
             <div className="workspace-row">
               <div className="workspace-icon">
@@ -713,6 +869,7 @@ function Dashboard() {
 
 
         <div className="dashboard-panel">
+
           <div className="dashboard-panel-header">
             <div>
               <div className="dashboard-kicker">
@@ -732,15 +889,18 @@ function Dashboard() {
               <strong>{user?.name}</strong>
             </div>
 
+
             <div className="dashboard-info-row">
               <span>Role</span>
               <strong>Client</strong>
             </div>
 
+
             <div className="dashboard-info-row">
               <span>Office</span>
               <strong>Peter Law Firm</strong>
             </div>
+
 
             <div className="dashboard-info-row">
               <span>Location</span>
@@ -765,6 +925,7 @@ function Dashboard() {
       <section className="dashboard-intro">
 
         <div>
+
           <div className="dashboard-kicker">
             PETER LAW FIRM · BELGRADE
           </div>
@@ -774,29 +935,36 @@ function Dashboard() {
           </h1>
 
           <p className="dashboard-description">
-            {user?.role === 'admin'
-              ? 'A central view of firm operations, people and legal administration.'
-              : user?.role === 'lawyer'
-                ? 'A focused workspace for your clients, cases and legal practice.'
-                : user?.role === 'employee'
-                  ? 'A personal workspace for your employee services and records.'
-                  : 'A secure portal for your legal matters and communication with the firm.'
-            }
+            {user?.role === "admin"
+              ? "A central view of firm operations, people and legal administration."
+              : user?.role === "lawyer"
+                ? "A focused workspace for your clients, cases and legal practice."
+                : user?.role === "employee"
+                  ? "A personal workspace for your employee services and records."
+                  : "A secure portal for your legal matters and communication with the firm."}
           </p>
+
         </div>
 
+
         <div className="dashboard-date">
+
           <span>ACCOUNT</span>
+
           <strong>
-            {roleLabel[user?.role] || 'User'}
+            {roleLabel[user?.role] || "User"}
           </strong>
+
         </div>
 
       </section>
 
 
-      {/* Error only matters for admin statistics */}
-      {error && user?.role === 'admin' && (
+      {/* =====================================================
+          ERROR
+          ===================================================== */}
+
+      {error && user?.role === "admin" && (
         <div className="dashboard-alert">
           <i className="bi bi-exclamation-circle"></i>
           {error}
@@ -808,17 +976,16 @@ function Dashboard() {
           ROLE-SPECIFIC CONTENT
           ===================================================== */}
 
-      {user?.role === 'admin' && renderAdminDashboard()}
+      {user?.role === "admin" && renderAdminDashboard()}
 
-      {user?.role === 'lawyer' && renderLawyerDashboard()}
+      {user?.role === "lawyer" && renderLawyerDashboard()}
 
-      {user?.role === 'employee' && renderEmployeeDashboard()}
+      {user?.role === "employee" && renderEmployeeDashboard()}
 
-      {user?.role === 'client' && renderClientDashboard()}
+      {user?.role === "client" && renderClientDashboard()}
 
     </div>
   );
 }
 
 export default Dashboard;
-

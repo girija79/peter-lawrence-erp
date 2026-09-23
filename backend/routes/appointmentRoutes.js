@@ -13,20 +13,22 @@ const { authorize } = require('../middleware/roleCheck');
 
 const router = express.Router();
 
+// Admin + Lawyer can view appointments
 router.get(
   '/',
   protect,
-  authorize('admin'),
+  authorize('admin', 'lawyer'),
   getAppointments
 );
 
 router.get(
   '/:id',
   protect,
-  authorize('admin'),
+  authorize('admin', 'lawyer'),
   getAppointmentById
 );
 
+// Only Admin can create appointments
 router.post(
   '/',
   protect,
@@ -34,6 +36,7 @@ router.post(
   createAppointment
 );
 
+// Only Admin can update appointments
 router.put(
   '/:id',
   protect,
@@ -41,6 +44,7 @@ router.put(
   updateAppointment
 );
 
+// Only Admin can delete appointments
 router.delete(
   '/:id',
   protect,

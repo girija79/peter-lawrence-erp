@@ -1,7 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import api from '../api/axios';
+import { AuthContext } from '../context/AuthContext';
 
 function Appointments() {
+  const { user } = useContext(AuthContext);
+
+  const isAdmin = user?.role === 'admin';
+  const isLawyer = user?.role === 'lawyer';
+
   const [appointments, setAppointments] = useState([]);
   const [clients, setClients] = useState([]);
   const [lawyers, setLawyers] = useState([]);
@@ -29,19 +35,24 @@ function Appointments() {
       setLoading(true);
       setError('');
 
-      const [
-        appointmentsResponse,
-        clientsResponse,
-        lawyersResponse
-      ] = await Promise.all([
-        api.get('/appointments'),
-        api.get('/clients'),
-        api.get('/lawyers')
-      ]);
+      // All allowed roles can view appointments
+      const appointmentsResponse = await api.get('/appointments');
 
       setAppointments(appointmentsResponse.data);
-      setClients(clientsResponse.data);
-      setLawyers(lawyersResponse.data);
+
+      // Only Admin needs client/lawyer lists
+      // because only Admin can create/edit appointments.
+      if (isAdmin) {
+        const [clientsResponse, lawyersResponse] =
+          await Promise.all([
+            api.get('/clients'),
+            api.get('/lawyers')
+          ]);
+
+        setClients(clientsResponse.data);
+        setLawyers(lawyersResponse.data);
+      }
+
     } catch (err) {
       console.error('Fetch Appointments Error:', err);
 
@@ -55,8 +66,10 @@ function Appointments() {
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (user) {
+      fetchData();
+    }
+  }, [user]);
 
   const resetForm = () => {
     setFormData({
@@ -130,6 +143,7 @@ function Appointments() {
       resetForm();
 
       await fetchData();
+
     } catch (err) {
       console.error('Save Appointment Error:', err);
 
@@ -153,6 +167,7 @@ function Appointments() {
       await api.delete(`/appointments/${id}`);
 
       await fetchData();
+
     } catch (err) {
       console.error('Delete Appointment Error:', err);
 
@@ -210,7 +225,9 @@ function Appointments() {
       <div className="page-container">
         <div className="empty-state">
           <i className="bi bi-hourglass-split"></i>
+
           <h3>Loading appointments</h3>
+
           <p>
             Please wait while appointment records are being loaded.
           </p>
@@ -226,24 +243,32 @@ function Appointments() {
       <div className="page-header">
 
         <div>
-          <p className="eyebrow">SCHEDULE & PROCEEDINGS</p>
+          <p className="eyebrow">
+            SCHEDULE & PROCEEDINGS
+          </p>
 
-          <h1>Appointments</h1>
+          <h1>
+            {isLawyer ? 'My Appointments' : 'Appointments'}
+          </h1>
 
           <p className="page-description">
-            Manage client meetings, consultations, court hearings
-            and other scheduled legal appointments.
+            {isLawyer
+              ? 'Review your scheduled client meetings, consultations and legal proceedings.'
+              : 'Manage client meetings, consultations, court hearings and other scheduled legal appointments.'}
           </p>
         </div>
 
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={handleAdd}
-        >
-          <i className="bi bi-calendar-plus me-2"></i>
-          New Appointment
-        </button>
+        {/* Admin only */}
+        {isAdmin && (
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={handleAdd}
+          >
+            <i className="bi bi-calendar-plus me-2"></i>
+            New Appointment
+          </button>
+        )}
 
       </div>
 
@@ -300,8 +325,8 @@ function Appointments() {
 
       </div>
 
-      {/* ADD / EDIT FORM */}
-      {showForm && (
+      {/* ADMIN ADD / EDIT FORM */}
+      {isAdmin && showForm && (
         <div className="content-card lawyer-form-card">
 
           <div className="card-header">
@@ -558,9 +583,15 @@ function Appointments() {
         <div className="card-header">
 
           <div>
-            <p className="eyebrow">APPOINTMENT REGISTER</p>
+            <p className="eyebrow">
+              APPOINTMENT REGISTER
+            </p>
 
-            <h2>Scheduled Appointments</h2>
+            <h2>
+              {isLawyer
+                ? 'My Scheduled Appointments'
+                : 'Scheduled Appointments'}
+            </h2>
           </div>
 
           <span className="record-count">
@@ -574,11 +605,16 @@ function Appointments() {
           <div className="empty-state">
             <i className="bi bi-calendar-x"></i>
 
-            <h3>No appointments recorded</h3>
+            <h3>
+              {isLawyer
+                ? 'No appointments assigned'
+                : 'No appointments recorded'}
+            </h3>
 
             <p>
-              Schedule the first appointment to begin the
-              firm's appointment register.
+              {isLawyer
+                ? 'No appointments are currently assigned to your lawyer profile.'
+                : 'Schedule the first appointment to begin the firm\'s appointment register.'}
             </p>
           </div>
 
@@ -596,7 +632,13 @@ function Appointments() {
                   <th>Date & Time</th>
                   <th>Type</th>
                   <th>Status</th>
-                  <th className="text-end">Actions</th>
+
+                  {/* Admin only */}
+                  {isAdmin && (
+                    <th className="text-end">
+                      Actions
+                    </th>
+                  )}
                 </tr>
               </thead>
 
@@ -612,7 +654,8 @@ function Appointments() {
                       </div>
 
                       <div className="table-secondary-text">
-                        {appointment.location || 'Location not specified'}
+                        {appointment.location ||
+                          'Location not specified'}
                       </div>
                     </td>
 
@@ -658,35 +701,36 @@ function Appointments() {
                       </span>
                     </td>
 
-                    <td>
+                    {/* Admin only */}
+                    {isAdmin && (
+                      <td>
+                        <div className="table-actions">
 
-                      <div className="table-actions">
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary"
+                            title="Edit appointment"
+                            onClick={() =>
+                              handleEdit(appointment)
+                            }
+                          >
+                            <i className="bi bi-pencil"></i>
+                          </button>
 
-                        <button
-                          type="button"
-                          className="btn btn-outline-secondary"
-                          title="Edit appointment"
-                          onClick={() =>
-                            handleEdit(appointment)
-                          }
-                        >
-                          <i className="bi bi-pencil"></i>
-                        </button>
+                          <button
+                            type="button"
+                            className="btn btn-outline-danger"
+                            title="Delete appointment"
+                            onClick={() =>
+                              handleDelete(appointment._id)
+                            }
+                          >
+                            <i className="bi bi-trash"></i>
+                          </button>
 
-                        <button
-                          type="button"
-                          className="btn btn-outline-danger"
-                          title="Delete appointment"
-                          onClick={() =>
-                            handleDelete(appointment._id)
-                          }
-                        >
-                          <i className="bi bi-trash"></i>
-                        </button>
-
-                      </div>
-
-                    </td>
+                        </div>
+                      </td>
+                    )}
 
                   </tr>
 

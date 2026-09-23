@@ -5,12 +5,30 @@ const Lawyer = require('../models/Lawyer');
 // Get all appointments
 const getAppointments = async (req, res) => {
   try {
-    const appointments = await Appointment.find()
+    let query = {};
+
+    // Lawyers can see only their assigned appointments
+    if (req.user.role === 'lawyer') {
+      const lawyer = await Lawyer.findOne({
+        userId: req.user._id
+      });
+
+      if (!lawyer) {
+        return res.status(404).json({
+          message: 'Lawyer profile not found'
+        });
+      }
+
+      query.lawyerId = lawyer._id;
+    }
+
+    const appointments = await Appointment.find(query)
       .populate('clientId', 'fullName email phone')
       .populate('lawyerId', 'fullName email specialization')
       .sort({ appointmentDate: 1 });
 
     res.json(appointments);
+
   } catch (error) {
     console.error('Get Appointments Error:', error);
 

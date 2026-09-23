@@ -1,7 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import api from '../api/axios';
+import { AuthContext } from '../context/AuthContext';
 
 function Vendors() {
+  const { user } = useContext(AuthContext);
+
+  const isAdmin = user?.role === 'admin';
+  const isAccountant = user?.role === 'accountant';
+
   const emptyForm = {
     vendorName: '',
     contactPerson: '',
@@ -36,6 +42,7 @@ function Vendors() {
       setVendors(response.data);
     } catch (err) {
       console.error(err);
+
       setError(
         err.response?.data?.message ||
           'Failed to load vendors.'
@@ -55,6 +62,8 @@ function Vendors() {
   };
 
   const openAddForm = () => {
+    if (!isAdmin) return;
+
     setForm(emptyForm);
     setEditingId(null);
     setShowForm(true);
@@ -70,6 +79,8 @@ function Vendors() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!isAdmin) return;
 
     if (!form.vendorName.trim()) {
       setError('Vendor name is required.');
@@ -90,6 +101,7 @@ function Vendors() {
       resetForm();
     } catch (err) {
       console.error(err);
+
       setError(
         err.response?.data?.message ||
           'Failed to save vendor.'
@@ -100,6 +112,8 @@ function Vendors() {
   };
 
   const handleEdit = (vendor) => {
+    if (!isAdmin) return;
+
     setForm({
       vendorName: vendor.vendorName || '',
       contactPerson: vendor.contactPerson || '',
@@ -119,6 +133,8 @@ function Vendors() {
   };
 
   const handleDelete = async (id) => {
+    if (!isAdmin) return;
+
     const confirmed = window.confirm(
       'Are you sure you want to delete this vendor?'
     );
@@ -130,6 +146,7 @@ function Vendors() {
       await loadVendors();
     } catch (err) {
       console.error(err);
+
       setError(
         err.response?.data?.message ||
           'Failed to delete vendor.'
@@ -162,21 +179,26 @@ function Vendors() {
         <div>
           <div className="eyebrow">Operations</div>
 
-          <h1>Vendors</h1>
+          <h1>
+            {isAccountant ? 'Vendor Records' : 'Vendors'}
+          </h1>
 
           <p className="page-description">
-            Manage external service providers, contracts,
-            payment terms and vendor relationships.
+            {isAccountant
+              ? 'Review vendor records, services, contracts and payment terms.'
+              : 'Manage external service providers, contracts, payment terms and vendor relationships.'}
           </p>
         </div>
 
-        <button
-          className="btn btn-primary"
-          onClick={openAddForm}
-        >
-          <i className="bi bi-building-add me-2"></i>
-          Add Vendor
-        </button>
+        {isAdmin && (
+          <button
+            className="btn btn-primary"
+            onClick={openAddForm}
+          >
+            <i className="bi bi-building-add me-2"></i>
+            Add Vendor
+          </button>
+        )}
       </div>
 
       {error && (
@@ -229,7 +251,7 @@ function Vendors() {
 
       </div>
 
-      {showForm && (
+      {isAdmin && showForm && (
         <div className="card lawyer-form-card">
 
           <div className="card-header">
@@ -482,8 +504,9 @@ function Vendors() {
             <h3>No vendors registered</h3>
 
             <p>
-              Add the first vendor to begin managing
-              external service providers.
+              {isAdmin
+                ? 'Add the first vendor to begin managing external service providers.'
+                : 'No vendor records are currently available.'}
             </p>
           </div>
         ) : (
@@ -498,9 +521,12 @@ function Vendors() {
                   <th>Service</th>
                   <th>Contract</th>
                   <th>Status</th>
-                  <th className="text-end">
-                    Actions
-                  </th>
+
+                  {isAdmin && (
+                    <th className="text-end">
+                      Actions
+                    </th>
+                  )}
                 </tr>
               </thead>
 
@@ -560,31 +586,33 @@ function Vendors() {
                       </span>
                     </td>
 
-                    <td>
-                      <div className="table-actions">
+                    {isAdmin && (
+                      <td>
+                        <div className="table-actions">
 
-                        <button
-                          className="btn btn-outline-secondary"
-                          onClick={() =>
-                            handleEdit(vendor)
-                          }
-                          title="Edit vendor"
-                        >
-                          <i className="bi bi-pencil"></i>
-                        </button>
+                          <button
+                            className="btn btn-outline-secondary"
+                            onClick={() =>
+                              handleEdit(vendor)
+                            }
+                            title="Edit vendor"
+                          >
+                            <i className="bi bi-pencil"></i>
+                          </button>
 
-                        <button
-                          className="btn btn-outline-danger"
-                          onClick={() =>
-                            handleDelete(vendor._id)
-                          }
-                          title="Delete vendor"
-                        >
-                          <i className="bi bi-trash"></i>
-                        </button>
+                          <button
+                            className="btn btn-outline-danger"
+                            onClick={() =>
+                              handleDelete(vendor._id)
+                            }
+                            title="Delete vendor"
+                          >
+                            <i className="bi bi-trash"></i>
+                          </button>
 
-                      </div>
-                    </td>
+                        </div>
+                      </td>
+                    )}
 
                   </tr>
                 ))}

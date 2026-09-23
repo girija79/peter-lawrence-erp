@@ -13,35 +13,37 @@ const { authorize } = require('../middleware/roleCheck');
 
 const router = express.Router();
 
-// Admin only
+// Admin + Accountant + Employee
 router.get(
   '/',
   protect,
-  authorize('admin'),
+  authorize('admin', 'accountant', 'employee'),
   getPayrolls
 );
 
 router.get(
   '/:id',
   protect,
-  authorize('admin'),
+  authorize('admin', 'accountant', 'employee'),
   getPayrollById
 );
 
+// Admin + Accountant can create/update
 router.post(
   '/',
   protect,
-  authorize('admin'),
+  authorize('admin', 'accountant'),
   createPayroll
 );
 
 router.put(
   '/:id',
   protect,
-  authorize('admin'),
+  authorize('admin', 'accountant'),
   updatePayroll
 );
 
+// Admin only can delete
 router.delete(
   '/:id',
   protect,

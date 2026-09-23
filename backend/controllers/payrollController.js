@@ -6,11 +6,30 @@ const calculateNetSalary = (basicSalary, bonus = 0, deductions = 0) => {
   return Number(basicSalary) + Number(bonus) - Number(deductions);
 };
 
-// @desc    Get all payroll records
+// @desc    Get payroll records
 // @route   GET /api/payroll
 const getPayrolls = async (req, res) => {
   try {
-    const payrolls = await Payroll.find()
+    let query = {};
+
+    // Employee can see only their own payroll
+    if (req.user.role === 'employee') {
+      const employee = await Employee.findOne({
+        userId: req.user._id
+      });
+
+      if (!employee) {
+        return res.status(404).json({
+          message: 'Employee profile not linked to this user account'
+        });
+      }
+
+      query = {
+        employeeId: employee._id
+      };
+    }
+
+    const payrolls = await Payroll.find(query)
       .populate(
         'employeeId',
         'employeeId fullName email department designation'
@@ -41,6 +60,27 @@ const getPayrollById = async (req, res) => {
       });
     }
 
+    // Employee can view only their own payroll
+    if (req.user.role === 'employee') {
+      const employee = await Employee.findOne({
+        userId: req.user._id
+      });
+
+      if (!employee) {
+        return res.status(404).json({
+          message: 'Employee profile not linked to this user account'
+        });
+      }
+
+      if (
+        payroll.employeeId._id.toString() !== employee._id.toString()
+      ) {
+        return res.status(403).json({
+          message: 'Access denied: you can only view your own payroll'
+        });
+      }
+    }
+
     res.status(200).json(payroll);
   } catch (error) {
     res.status(500).json({
@@ -67,7 +107,6 @@ const createPayroll = async (req, res) => {
       notes = ''
     } = req.body;
 
-    // Required fields
     if (
       !payrollNumber ||
       !employeeId ||
@@ -81,7 +120,6 @@ const createPayroll = async (req, res) => {
       });
     }
 
-    // Validate employee ID
     if (!mongoose.Types.ObjectId.isValid(employeeId)) {
       return res.status(400).json({
         message: 'Invalid employee ID'
@@ -96,7 +134,6 @@ const createPayroll = async (req, res) => {
       });
     }
 
-    // Validate salary values
     const basic = Number(basicSalary);
     const bonusAmount = Number(bonus);
     const deductionAmount = Number(deductions);
@@ -129,7 +166,6 @@ const createPayroll = async (req, res) => {
       });
     }
 
-    // Prevent duplicate payroll for same employee and month
     const existingPayroll = await Payroll.findOne({
       employeeId,
       salaryMonth: salaryMonth.trim()
@@ -142,7 +178,6 @@ const createPayroll = async (req, res) => {
       });
     }
 
-    // Prevent duplicate payroll number
     const existingNumber = await Payroll.findOne({
       payrollNumber: payrollNumber.trim()
     });
@@ -212,12 +247,12 @@ const updatePayroll = async (req, res) => {
     } = req.body;
 
     const newEmployeeId = employeeId || payroll.employeeId;
+
     const newSalaryMonth =
       salaryMonth !== undefined
         ? salaryMonth.trim()
         : payroll.salaryMonth;
 
-    // Validate employee
     if (!mongoose.Types.ObjectId.isValid(newEmployeeId)) {
       return res.status(400).json({
         message: 'Invalid employee ID'
@@ -273,7 +308,6 @@ const updatePayroll = async (req, res) => {
       });
     }
 
-    // Check duplicate employee + month
     const duplicatePayroll = await Payroll.findOne({
       employeeId: newEmployeeId,
       salaryMonth: newSalaryMonth,
@@ -287,7 +321,6 @@ const updatePayroll = async (req, res) => {
       });
     }
 
-    // Check duplicate payroll number
     if (payrollNumber !== undefined) {
       const duplicateNumber = await Payroll.findOne({
         payrollNumber: payrollNumber.trim(),

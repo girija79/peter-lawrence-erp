@@ -3,48 +3,48 @@ const express = require('express');
 const router = express.Router();
 
 const {
-  getClients,
-  getClientById,
-  createClient,
-  updateClient,
-  deleteClient
+    getClients,
+    getClientById,
+    createClient,
+    updateClient,
+    deleteClient
 } = require('../controllers/clientController');
 
 const { protect } = require('../middleware/auth');
+const { authorize } = require('../middleware/roleCheck');
 
-// GET /api/clients
-router.get(
-  '/',
-  protect,
-  getClients
-);
 
-// GET /api/clients/:id
-router.get(
-  '/:id',
-  protect,
-  getClientById
-);
+router.get('/', protect, authorize('admin', 'lawyer', 'accountant', 'client'), getClients);
+router.get('/:id', protect, authorize('admin', 'lawyer', 'accountant', 'client'), getClientById);
 
 // POST /api/clients
+// Admin only
 router.post(
-  '/',
-  protect,
-  createClient
+    '/',
+    protect,
+    authorize('admin'),
+    createClient
 );
+
 
 // PUT /api/clients/:id
+// Admin only
 router.put(
-  '/:id',
-  protect,
-  updateClient
+    '/:id',
+    protect,
+    authorize('admin'),
+    updateClient
 );
 
+
 // DELETE /api/clients/:id
+// Admin only
 router.delete(
-  '/:id',
-  protect,
-  deleteClient
+    '/:id',
+    protect,
+    authorize('admin'),
+    deleteClient
 );
+
 
 module.exports = router;

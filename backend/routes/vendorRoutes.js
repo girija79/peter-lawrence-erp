@@ -13,10 +13,41 @@ const { authorize } = require('../middleware/roleCheck');
 
 const router = express.Router();
 
-router.get('/', protect, authorize('admin'), getVendors);
-router.get('/:id', protect, authorize('admin'), getVendorById);
-router.post('/', protect, authorize('admin'), createVendor);
-router.put('/:id', protect, authorize('admin'), updateVendor);
-router.delete('/:id', protect, authorize('admin'), deleteVendor);
+// Admin + Accountant can view vendors
+router.get(
+  '/',
+  protect,
+  authorize('admin', 'accountant'),
+  getVendors
+);
+
+router.get(
+  '/:id',
+  protect,
+  authorize('admin', 'accountant'),
+  getVendorById
+);
+
+// Only Admin can manage vendors
+router.post(
+  '/',
+  protect,
+  authorize('admin'),
+  createVendor
+);
+
+router.put(
+  '/:id',
+  protect,
+  authorize('admin'),
+  updateVendor
+);
+
+router.delete(
+  '/:id',
+  protect,
+  authorize('admin'),
+  deleteVendor
+);
 
 module.exports = router;

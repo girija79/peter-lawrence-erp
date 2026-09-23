@@ -1,57 +1,68 @@
-import { useEffect, useMemo, useState } from 'react';
-import api from '../api/axios';
+import { useEffect, useMemo, useState, useContext } from "react";
+import api from "../api/axios";
+import { AuthContext } from "../context/AuthContext";
 
 const initialForm = {
-  employeeId: '',
-  attendanceDate: new Date().toISOString().split('T')[0],
-  checkIn: '',
-  checkOut: '',
-  status: 'Present',
-  remarks: ''
+  employeeId: "",
+  attendanceDate: new Date().toISOString().split("T")[0],
+  checkIn: "",
+  checkOut: "",
+  status: "Present",
+  remarks: "",
 };
 
 const formatDate = (date) => {
-  if (!date) return '-';
+  if (!date) return "-";
 
-  return new Date(date).toLocaleDateString('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric'
+  return new Date(date).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
   });
 };
 
 const Attendance = () => {
+  const { user } = useContext(AuthContext);
+
+  const isEmployee = user?.role === "employee";
+  const isAdmin = user?.role === "admin";
   const [attendance, setAttendance] = useState([]);
   const [employees, setEmployees] = useState([]);
 
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState(null);
 
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All');
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const loadData = async () => {
     try {
       setLoading(true);
-      setError('');
+      setError("");
 
-      const [attendanceRes, employeesRes] = await Promise.all([
-        api.get('/attendance'),
-        api.get('/employees')
-      ]);
+      if (isEmployee) {
+        const attendanceRes = await api.get("/attendance/me");
 
-      setAttendance(attendanceRes.data);
-      setEmployees(employeesRes.data);
+        setAttendance(attendanceRes.data);
+        setEmployees([]);
+      } else {
+        const [attendanceRes, employeesRes] = await Promise.all([
+          api.get("/attendance"),
+          api.get("/employees"),
+        ]);
+
+        setAttendance(attendanceRes.data);
+        setEmployees(employeesRes.data);
+      }
     } catch (err) {
       setError(
-        err.response?.data?.message ||
-          'Failed to load attendance data.'
+        err.response?.data?.message || "Failed to load attendance data.",
       );
     } finally {
       setLoading(false);
@@ -59,15 +70,17 @@ const Attendance = () => {
   };
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (user) {
+      loadData();
+    }
+  }, [user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
     setForm((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -80,29 +93,28 @@ const Attendance = () => {
     e.preventDefault();
 
     if (!form.employeeId || !form.attendanceDate) {
-      setError('Employee and attendance date are required.');
+      setError("Employee and attendance date are required.");
       return;
     }
 
     try {
       setSaving(true);
-      setError('');
-      setSuccess('');
+      setError("");
+      setSuccess("");
 
       if (editingId) {
         await api.put(`/attendance/${editingId}`, form);
-        setSuccess('Attendance record updated successfully.');
+        setSuccess("Attendance record updated successfully.");
       } else {
-        await api.post('/attendance', form);
-        setSuccess('Attendance record created successfully.');
+        await api.post("/attendance", form);
+        setSuccess("Attendance record created successfully.");
       }
 
       resetForm();
       await loadData();
     } catch (err) {
       setError(
-        err.response?.data?.message ||
-          'Failed to save attendance record.'
+        err.response?.data?.message || "Failed to save attendance record.",
       );
     } finally {
       setSaving(false);
@@ -113,41 +125,39 @@ const Attendance = () => {
     setEditingId(record._id);
 
     setForm({
-      employeeId: record.employeeId?._id || '',
+      employeeId: record.employeeId?._id || "",
       attendanceDate: record.attendanceDate
-        ? new Date(record.attendanceDate)
-            .toISOString()
-            .split('T')[0]
-        : '',
-      checkIn: record.checkIn || '',
-      checkOut: record.checkOut || '',
-      status: record.status || 'Present',
-      remarks: record.remarks || ''
+        ? new Date(record.attendanceDate).toISOString().split("T")[0]
+        : "",
+      checkIn: record.checkIn || "",
+      checkOut: record.checkOut || "",
+      status: record.status || "Present",
+      remarks: record.remarks || "",
     });
 
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     window.scrollTo({
       top: 0,
-      behavior: 'smooth'
+      behavior: "smooth",
     });
   };
 
   const handleDelete = async (id) => {
     const confirmed = window.confirm(
-      'Are you sure you want to delete this attendance record?'
+      "Are you sure you want to delete this attendance record?",
     );
 
     if (!confirmed) return;
 
     try {
-      setError('');
-      setSuccess('');
+      setError("");
+      setSuccess("");
 
       await api.delete(`/attendance/${id}`);
 
-      setSuccess('Attendance record deleted successfully.');
+      setSuccess("Attendance record deleted successfully.");
 
       if (editingId === id) {
         resetForm();
@@ -156,8 +166,7 @@ const Attendance = () => {
       await loadData();
     } catch (err) {
       setError(
-        err.response?.data?.message ||
-          'Failed to delete attendance record.'
+        err.response?.data?.message || "Failed to delete attendance record.",
       );
     }
   };
@@ -175,8 +184,7 @@ const Attendance = () => {
         employee?.department?.toLowerCase().includes(searchText);
 
       const matchesStatus =
-        statusFilter === 'All' ||
-        record.status === statusFilter;
+        statusFilter === "All" || record.status === statusFilter;
 
       return matchesSearch && matchesStatus;
     });
@@ -185,15 +193,15 @@ const Attendance = () => {
   const totalRecords = attendance.length;
 
   const presentCount = attendance.filter(
-    (item) => item.status === 'Present'
+    (item) => item.status === "Present",
   ).length;
 
   const absentCount = attendance.filter(
-    (item) => item.status === 'Absent'
+    (item) => item.status === "Absent",
   ).length;
 
   const leaveCount = attendance.filter(
-    (item) => item.status === 'Leave'
+    (item) => item.status === "Leave",
   ).length;
 
   return (
@@ -202,11 +210,12 @@ const Attendance = () => {
         <div>
           <div className="page-kicker">Employee Management</div>
 
-          <h1>Attendance</h1>
+          <h1>{isEmployee ? "My Attendance" : "Attendance"}</h1>
 
           <p>
-            Maintain daily employee attendance, working hours
-            and attendance records.
+            {isEmployee
+              ? "View your attendance history and working hours."
+              : "Maintain daily employee attendance, working hours and attendance records."}
           </p>
         </div>
 
@@ -233,237 +242,208 @@ const Attendance = () => {
       <div className="summary-grid">
         <div className="summary-card">
           <div className="summary-card-label">
-            Attendance Records
+            {isEmployee ? "My Attendance" : "Attendance Records"}
           </div>
 
-          <div className="summary-card-value">
-            {totalRecords}
-          </div>
+          <div className="summary-card-value">{totalRecords}</div>
 
           <div className="summary-card-note">
-            Total recorded entries
+            {isEmployee ? "Your recorded attendance" : "Total recorded entries"}
           </div>
         </div>
 
         <div className="summary-card">
-          <div className="summary-card-label">
-            Present
-          </div>
+          <div className="summary-card-label">Present</div>
 
-          <div className="summary-card-value">
-            {presentCount}
-          </div>
+          <div className="summary-card-value">{presentCount}</div>
 
           <div className="summary-card-note">
-            Employees marked present
+            {isEmployee ? "Days you were present" : "Employees marked present"}
           </div>
         </div>
 
         <div className="summary-card">
-          <div className="summary-card-label">
-            Absent
-          </div>
+          <div className="summary-card-label">Absent</div>
 
-          <div className="summary-card-value">
-            {absentCount}
-          </div>
+          <div className="summary-card-value">{absentCount}</div>
 
           <div className="summary-card-note">
-            Employees marked absent
+            {isEmployee ? "Days you were absent" : "Employees marked absent"}
           </div>
         </div>
 
         <div className="summary-card">
-          <div className="summary-card-label">
-            Leave
-          </div>
+          <div className="summary-card-label">Leave</div>
 
-          <div className="summary-card-value">
-            {leaveCount}
-          </div>
+          <div className="summary-card-value">{leaveCount}</div>
 
           <div className="summary-card-note">
-            Attendance marked as leave
+            {isEmployee ? "Your leave days" : "Attendance marked as leave"}
           </div>
         </div>
       </div>
+
+      {isAdmin && (
+        <div className="editorial-section">
+          <div className="section-heading">
+            <div>
+              <span className="section-kicker">
+                {editingId ? "Edit Record" : "Daily Record"}
+              </span>
+
+              <h2>{editingId ? "Update Attendance" : "Record Attendance"}</h2>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit}>
+            <div className="form-grid">
+              <div className="form-field">
+                <label htmlFor="employeeId">
+                  Employee <span>*</span>
+                </label>
+
+                <select
+                  id="employeeId"
+                  name="employeeId"
+                  value={form.employeeId}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Select employee</option>
+
+                  {employees.map((employee) => (
+                    <option key={employee._id} value={employee._id}>
+                      {employee.employeeId} — {employee.fullName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="attendanceDate">
+                  Attendance Date <span>*</span>
+                </label>
+
+                <input
+                  id="attendanceDate"
+                  type="date"
+                  name="attendanceDate"
+                  value={form.attendanceDate}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="checkIn">Check In</label>
+
+                <input
+                  id="checkIn"
+                  type="time"
+                  name="checkIn"
+                  value={form.checkIn}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="checkOut">Check Out</label>
+
+                <input
+                  id="checkOut"
+                  type="time"
+                  name="checkOut"
+                  value={form.checkOut}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="status">Attendance Status</label>
+
+                <select
+                  id="status"
+                  name="status"
+                  value={form.status}
+                  onChange={handleChange}
+                >
+                  <option value="Present">Present</option>
+                  <option value="Absent">Absent</option>
+                  <option value="Half Day">Half Day</option>
+                  <option value="Leave">Leave</option>
+                </select>
+              </div>
+
+              <div className="form-field form-field-wide">
+                <label htmlFor="remarks">Remarks</label>
+
+                <textarea
+                  id="remarks"
+                  name="remarks"
+                  value={form.remarks}
+                  onChange={handleChange}
+                  rows="3"
+                  placeholder="Add an optional attendance note..."
+                ></textarea>
+              </div>
+            </div>
+
+            <div className="form-actions">
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={saving}
+              >
+                {saving ? (
+                  <>
+                    <span
+                      className="spinner-border spinner-border-sm me-2"
+                      role="status"
+                    ></span>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <i
+                      className={`bi ${
+                        editingId ? "bi-check-lg" : "bi-plus-lg"
+                      } me-2`}
+                    ></i>
+
+                    {editingId ? "Update Attendance" : "Record Attendance"}
+                  </>
+                )}
+              </button>
+
+              {editingId && (
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={resetForm}
+                >
+                  Cancel Edit
+                </button>
+              )}
+            </div>
+          </form>
+        </div>
+      )}
 
       <div className="editorial-section">
         <div className="section-heading">
           <div>
             <span className="section-kicker">
-              {editingId ? 'Edit Record' : 'Daily Record'}
+              {isEmployee ? "My Attendance History" : "Attendance Register"}
             </span>
 
             <h2>
-              {editingId
-                ? 'Update Attendance'
-                : 'Record Attendance'}
+              {isEmployee ? "My Attendance Records" : "Attendance Records"}
             </h2>
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit}>
-          <div className="form-grid">
-            <div className="form-field">
-              <label htmlFor="employeeId">
-                Employee <span>*</span>
-              </label>
-
-              <select
-                id="employeeId"
-                name="employeeId"
-                value={form.employeeId}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Select employee</option>
-
-                {employees.map((employee) => (
-                  <option
-                    key={employee._id}
-                    value={employee._id}
-                  >
-                    {employee.employeeId} — {employee.fullName}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-field">
-              <label htmlFor="attendanceDate">
-                Attendance Date <span>*</span>
-              </label>
-
-              <input
-                id="attendanceDate"
-                type="date"
-                name="attendanceDate"
-                value={form.attendanceDate}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div className="form-field">
-              <label htmlFor="checkIn">
-                Check In
-              </label>
-
-              <input
-                id="checkIn"
-                type="time"
-                name="checkIn"
-                value={form.checkIn}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="form-field">
-              <label htmlFor="checkOut">
-                Check Out
-              </label>
-
-              <input
-                id="checkOut"
-                type="time"
-                name="checkOut"
-                value={form.checkOut}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="form-field">
-              <label htmlFor="status">
-                Attendance Status
-              </label>
-
-              <select
-                id="status"
-                name="status"
-                value={form.status}
-                onChange={handleChange}
-              >
-                <option value="Present">Present</option>
-                <option value="Absent">Absent</option>
-                <option value="Half Day">Half Day</option>
-                <option value="Leave">Leave</option>
-              </select>
-            </div>
-
-            <div className="form-field form-field-wide">
-              <label htmlFor="remarks">
-                Remarks
-              </label>
-
-              <textarea
-                id="remarks"
-                name="remarks"
-                value={form.remarks}
-                onChange={handleChange}
-                rows="3"
-                placeholder="Add an optional attendance note..."
-              ></textarea>
-            </div>
-          </div>
-
-          <div className="form-actions">
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={saving}
-            >
-              {saving ? (
-                <>
-                  <span
-                    className="spinner-border spinner-border-sm me-2"
-                    role="status"
-                  ></span>
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <i
-                    className={`bi ${
-                      editingId
-                        ? 'bi-check-lg'
-                        : 'bi-plus-lg'
-                    } me-2`}
-                  ></i>
-
-                  {editingId
-                    ? 'Update Attendance'
-                    : 'Record Attendance'}
-                </>
-              )}
-            </button>
-
-            {editingId && (
-              <button
-                type="button"
-                className="btn btn-outline-secondary"
-                onClick={resetForm}
-              >
-                Cancel Edit
-              </button>
-            )}
-          </div>
-        </form>
-      </div>
-
-      <div className="editorial-section">
-        <div className="section-heading">
-          <div>
-            <span className="section-kicker">
-              Attendance Register
-            </span>
-
-            <h2>Attendance Records</h2>
           </div>
 
           <div className="section-count">
             {filteredAttendance.length} record
-            {filteredAttendance.length !== 1 ? 's' : ''}
+            {filteredAttendance.length !== 1 ? "s" : ""}
           </div>
         </div>
 
@@ -482,9 +462,7 @@ const Attendance = () => {
           <div className="toolbar-filter">
             <select
               value={statusFilter}
-              onChange={(e) =>
-                setStatusFilter(e.target.value)
-              }
+              onChange={(e) => setStatusFilter(e.target.value)}
             >
               <option value="All">All Statuses</option>
               <option value="Present">Present</option>
@@ -509,9 +487,7 @@ const Attendance = () => {
 
             <h3>No attendance records</h3>
 
-            <p>
-              Record employee attendance using the form above.
-            </p>
+            <p>Record employee attendance using the form above.</p>
           </div>
         ) : (
           <div className="table-responsive">
@@ -524,7 +500,7 @@ const Attendance = () => {
                   <th>Check Out</th>
                   <th>Status</th>
                   <th>Remarks</th>
-                  <th className="text-end">Actions</th>
+                  {isAdmin && <th className="text-end">Actions</th>}
                 </tr>
               </thead>
 
@@ -533,31 +509,25 @@ const Attendance = () => {
                   <tr key={record._id}>
                     <td>
                       <div className="table-primary-text">
-                        {record.employeeId?.fullName || '-'}
+                        {record.employeeId?.fullName || "-"}
                       </div>
 
                       <div className="table-secondary-text">
-                        {record.employeeId?.employeeId || '-'}
+                        {record.employeeId?.employeeId || "-"}
                       </div>
                     </td>
 
-                    <td>
-                      {formatDate(record.attendanceDate)}
-                    </td>
+                    <td>{formatDate(record.attendanceDate)}</td>
 
-                    <td>
-                      {record.checkIn || '—'}
-                    </td>
+                    <td>{record.checkIn || "—"}</td>
 
-                    <td>
-                      {record.checkOut || '—'}
-                    </td>
+                    <td>{record.checkOut || "—"}</td>
 
                     <td>
                       <span
                         className={`status-badge status-${record.status
                           ?.toLowerCase()
-                          .replace(/\s+/g, '-')}`}
+                          .replace(/\s+/g, "-")}`}
                       >
                         {record.status}
                       </span>
@@ -565,33 +535,33 @@ const Attendance = () => {
 
                     <td>
                       <span className="table-secondary-text">
-                        {record.remarks || '—'}
+                        {record.remarks || "—"}
                       </span>
                     </td>
 
-                    <td>
-                      <div className="table-actions justify-content-end">
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-primary"
-                          title="Edit attendance"
-                          onClick={() => handleEdit(record)}
-                        >
-                          <i className="bi bi-pencil"></i>
-                        </button>
+                    {isAdmin && (
+                      <td>
+                        <div className="table-actions justify-content-end">
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-primary"
+                            title="Edit attendance"
+                            onClick={() => handleEdit(record)}
+                          >
+                            <i className="bi bi-pencil"></i>
+                          </button>
 
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-danger"
-                          title="Delete attendance"
-                          onClick={() =>
-                            handleDelete(record._id)
-                          }
-                        >
-                          <i className="bi bi-trash"></i>
-                        </button>
-                      </div>
-                    </td>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-danger"
+                            title="Delete attendance"
+                            onClick={() => handleDelete(record._id)}
+                          >
+                            <i className="bi bi-trash"></i>
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

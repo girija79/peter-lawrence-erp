@@ -3,6 +3,7 @@ const express = require('express');
 const {
   getAttendance,
   getAttendanceById,
+  getMyAttendance,
   createAttendance,
   updateAttendance,
   deleteAttendance
@@ -15,6 +16,13 @@ const router = express.Router();
 
 // Admin only
 router.get('/', protect, authorize('admin'), getAttendance);
+
+router.get(
+  '/me',
+  protect,
+  authorize('employee'),
+  getMyAttendance
+);
 
 router.get(
   '/:id',

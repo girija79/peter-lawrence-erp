@@ -1,7 +1,12 @@
-import { useEffect, useState } from 'react';
+
+import { useContext, useEffect, useState } from 'react';
 import api from '../api/axios';
+import { AuthContext } from '../context/AuthContext';
 
 function Documents() {
+  const { user } = useContext(AuthContext);
+  const isAdmin = user?.role === 'admin';
+
   const [documents, setDocuments] = useState([]);
   const [clients, setClients] = useState([]);
   const [cases, setCases] = useState([]);
@@ -34,17 +39,23 @@ function Documents() {
       setLoading(true);
       setError('');
 
-      const [documentsRes, clientsRes, casesRes] = await Promise.all([
-        api.get('/documents'),
-        api.get('/clients'),
-        api.get('/cases')
-      ]);
+      const documentsRes = await api.get('/documents');
 
       setDocuments(documentsRes.data);
-      setClients(clientsRes.data);
-      setCases(casesRes.data);
+
+      // Only Admin needs client/case lists for document management.
+      if (isAdmin) {
+        const [clientsRes, casesRes] = await Promise.all([
+          api.get('/clients'),
+          api.get('/cases')
+        ]);
+
+        setClients(clientsRes.data);
+        setCases(casesRes.data);
+      }
     } catch (err) {
       console.error(err);
+
       setError(
         err.response?.data?.message ||
           'Failed to load documents.'
@@ -73,6 +84,8 @@ function Documents() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!isAdmin) return;
+
     if (!form.documentName || !form.clientId) {
       setError('Document name and client are required.');
       return;
@@ -97,6 +110,7 @@ function Documents() {
       resetForm();
     } catch (err) {
       console.error(err);
+
       setError(
         err.response?.data?.message ||
           'Failed to save document.'
@@ -107,11 +121,19 @@ function Documents() {
   };
 
   const handleEdit = (document) => {
+    if (!isAdmin) return;
+
     setForm({
       documentName: document.documentName || '',
       documentType: document.documentType || 'Other',
-      clientId: document.clientId?._id || document.clientId || '',
-      caseId: document.caseId?._id || document.caseId || '',
+      clientId:
+        document.clientId?._id ||
+        document.clientId ||
+        '',
+      caseId:
+        document.caseId?._id ||
+        document.caseId ||
+        '',
       fileName: document.fileName || '',
       fileUrl: document.fileUrl || '',
       description: document.description || '',
@@ -124,6 +146,8 @@ function Documents() {
   };
 
   const handleDelete = async (id) => {
+    if (!isAdmin) return;
+
     const confirmed = window.confirm(
       'Are you sure you want to delete this document?'
     );
@@ -135,6 +159,7 @@ function Documents() {
       await loadData();
     } catch (err) {
       console.error(err);
+
       setError(
         err.response?.data?.message ||
           'Failed to delete document.'
@@ -181,26 +206,31 @@ function Documents() {
         <div>
           <div className="eyebrow">Legal Records</div>
 
-          <h1>Documents</h1>
+          <h1>
+            {isAdmin ? 'Documents' : 'My Documents'}
+          </h1>
 
           <p className="page-description">
-            Manage agreements, court documents, evidence and
-            other legal records associated with clients and cases.
+            {isAdmin
+              ? 'Manage agreements, court documents, evidence and other legal records associated with clients and cases.'
+              : 'View legal documents associated with your assigned cases.'}
           </p>
         </div>
 
-        <button
-          className="btn btn-primary"
-          onClick={() => {
-            setForm(emptyForm);
-            setEditingId(null);
-            setShowForm(true);
-            setError('');
-          }}
-        >
-          <i className="bi bi-file-earmark-plus me-2"></i>
-          Add Document
-        </button>
+        {isAdmin && (
+          <button
+            className="btn btn-primary"
+            onClick={() => {
+              setForm(emptyForm);
+              setEditingId(null);
+              setShowForm(true);
+              setError('');
+            }}
+          >
+            <i className="bi bi-file-earmark-plus me-2"></i>
+            Add Document
+          </button>
+        )}
       </div>
 
       {error && (
@@ -253,7 +283,7 @@ function Documents() {
 
       </div>
 
-      {showForm && (
+      {isAdmin && showForm && (
         <div className="card lawyer-form-card">
 
           <div className="card-header">
@@ -465,6 +495,7 @@ function Documents() {
 
           <div>
             <h3>Document Register</h3>
+
             <p>
               {documents.length} document
               {documents.length !== 1 ? 's' : ''} recorded
@@ -476,7 +507,9 @@ function Documents() {
         {loading ? (
           <div className="empty-state">
             <i className="bi bi-hourglass-split"></i>
+
             <h3>Loading documents...</h3>
+
             <p>
               Retrieving document records from the system.
             </p>
@@ -488,8 +521,9 @@ function Documents() {
             <h3>No documents recorded</h3>
 
             <p>
-              Add the first legal document to begin building
-              the document register.
+              {isAdmin
+                ? 'Add the first legal document to begin building the document register.'
+                : 'No documents are currently associated with your assigned cases.'}
             </p>
           </div>
         ) : (
@@ -504,6 +538,7 @@ function Documents() {
                   <th>Case</th>
                   <th>Type</th>
                   <th>Status</th>
+
                   <th className="text-end">
                     Actions
                   </th>
@@ -574,25 +609,29 @@ function Documents() {
                           </a>
                         )}
 
-                        <button
-                          className="btn btn-outline-secondary"
-                          onClick={() =>
-                            handleEdit(document)
-                          }
-                          title="Edit document"
-                        >
-                          <i className="bi bi-pencil"></i>
-                        </button>
+                        {isAdmin && (
+                          <>
+                            <button
+                              className="btn btn-outline-secondary"
+                              onClick={() =>
+                                handleEdit(document)
+                              }
+                              title="Edit document"
+                            >
+                              <i className="bi bi-pencil"></i>
+                            </button>
 
-                        <button
-                          className="btn btn-outline-danger"
-                          onClick={() =>
-                            handleDelete(document._id)
-                          }
-                          title="Delete document"
-                        >
-                          <i className="bi bi-trash"></i>
-                        </button>
+                            <button
+                              className="btn btn-outline-danger"
+                              onClick={() =>
+                                handleDelete(document._id)
+                              }
+                              title="Delete document"
+                            >
+                              <i className="bi bi-trash"></i>
+                            </button>
+                          </>
+                        )}
 
                       </div>
                     </td>
@@ -614,3 +653,4 @@ function Documents() {
 }
 
 export default Documents;
+

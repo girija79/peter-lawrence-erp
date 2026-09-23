@@ -13,11 +13,42 @@ const { authorize } = require('../middleware/roleCheck');
 
 const router = express.Router();
 
-// Admin-only invoice management
-router.get('/', protect, authorize('admin'), getInvoices);
-router.get('/:id', protect, authorize('admin'), getInvoiceById);
-router.post('/', protect, authorize('admin'), createInvoice);
-router.put('/:id', protect, authorize('admin'), updateInvoice);
-router.delete('/:id', protect, authorize('admin'), deleteInvoice);
+// Admin + Accountant can view invoices
+router.get(
+  '/',
+  protect,
+  authorize('admin', 'accountant'),
+  getInvoices
+);
+
+router.get(
+  '/:id',
+  protect,
+  authorize('admin', 'accountant'),
+  getInvoiceById
+);
+
+// Admin + Accountant can create/update invoices
+router.post(
+  '/',
+  protect,
+  authorize('admin', 'accountant'),
+  createInvoice
+);
+
+router.put(
+  '/:id',
+  protect,
+  authorize('admin', 'accountant'),
+  updateInvoice
+);
+
+// Delete remains Admin-only
+router.delete(
+  '/:id',
+  protect,
+  authorize('admin'),
+  deleteInvoice
+);
 
 module.exports = router;

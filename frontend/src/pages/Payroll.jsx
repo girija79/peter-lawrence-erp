@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+
+import { useContext, useEffect, useMemo, useState } from 'react';
 import api from '../api/axios';
+import { AuthContext } from '../context/AuthContext';
 
 const initialForm = {
   payrollNumber: '',
@@ -32,10 +34,13 @@ const getStatusClass = (status) => {
   switch (status) {
     case 'Paid':
       return 'status-paid';
+
     case 'Processed':
       return 'status-processed';
+
     case 'Pending':
       return 'status-pending';
+
     default:
       return 'status-neutral';
   }
@@ -44,9 +49,7 @@ const getStatusClass = (status) => {
 const getMonthValue = (monthString) => {
   if (!monthString) return '';
 
-  const date = new Date(
-    `${monthString} 1, 2000`
-  );
+  const date = new Date(`${monthString} 1, 2000`);
 
   if (Number.isNaN(date.getTime())) return '';
 
@@ -56,6 +59,12 @@ const getMonthValue = (monthString) => {
 };
 
 export default function Payroll() {
+  const { user } = useContext(AuthContext);
+
+  const canManagePayroll =
+    user?.role === 'admin' ||
+    user?.role === 'accountant';
+
   const [payrolls, setPayrolls] = useState([]);
   const [employees, setEmployees] = useState([]);
 
@@ -73,22 +82,29 @@ export default function Payroll() {
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (user) {
+      fetchData();
+    }
+  }, [user]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
       setError('');
 
-      const [payrollResponse, employeeResponse] =
-        await Promise.all([
-          api.get('/payroll'),
-          api.get('/employees')
-        ]);
+      // All allowed payroll users can access payroll records.
+      const payrollResponse = await api.get('/payroll');
 
       setPayrolls(payrollResponse.data || []);
-      setEmployees(employeeResponse.data || []);
+
+      // Only Admin and Accountant need the employee list
+      // because only they can create/edit payroll.
+      if (canManagePayroll) {
+        const employeeResponse = await api.get('/employees');
+        setEmployees(employeeResponse.data || []);
+      } else {
+        setEmployees([]);
+      }
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -352,7 +368,8 @@ export default function Payroll() {
     );
 
     const paid = payrolls.filter(
-      (payroll) => payroll.paymentStatus === 'Paid'
+      (payroll) =>
+        payroll.paymentStatus === 'Paid'
     ).length;
 
     const processed = payrolls.filter(
@@ -377,6 +394,9 @@ export default function Payroll() {
 
   return (
     <div className="page-container payroll-page">
+
+      {/* Page Header */}
+
       <div className="page-header">
         <div>
           <span className="eyebrow">
@@ -386,11 +406,14 @@ export default function Payroll() {
           <h1>Employee Payroll</h1>
 
           <p>
-            Process monthly salaries, bonuses,
-            deductions and employee payments.
+            {canManagePayroll
+              ? 'Process monthly salaries, bonuses, deductions and employee payments.'
+              : 'View your salary, deductions and payment records.'}
           </p>
         </div>
       </div>
+
+      {/* Alerts */}
 
       {error && (
         <div
@@ -413,6 +436,7 @@ export default function Payroll() {
       {/* Summary */}
 
       <div className="summary-grid">
+
         <div className="summary-card">
           <div className="summary-label">
             Payroll Records
@@ -482,330 +506,370 @@ export default function Payroll() {
             {summary.pending}
           </div>
         </div>
+
       </div>
 
-      {/* Payroll Form */}
+      {/* Payroll Form - Admin + Accountant only */}
 
-      <section className="editorial-section">
-        <div className="section-heading">
-          <h2>
-            {editingId
-              ? 'Edit Payroll Record'
-              : 'Process Employee Payroll'}
-          </h2>
+      {canManagePayroll && (
+        <section className="editorial-section">
 
-          <p>
-            Enter monthly salary details and payment
-            information.
-          </p>
-        </div>
+          <div className="section-heading">
+            <h2>
+              {editingId
+                ? 'Edit Payroll Record'
+                : 'Process Employee Payroll'}
+            </h2>
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-grid">
-            <div className="form-field">
-              <label htmlFor="payrollNumber">
-                Payroll Number *
-              </label>
+            <p>
+              Enter monthly salary details and payment
+              information.
+            </p>
+          </div>
 
-              <input
-                id="payrollNumber"
-                name="payrollNumber"
-                type="text"
-                value={form.payrollNumber}
-                onChange={handleChange}
-                placeholder="PAYROLL-2026-002"
-              />
-            </div>
+          <form onSubmit={handleSubmit}>
 
-            <div className="form-field">
-              <label htmlFor="employeeId">
-                Employee *
-              </label>
+            <div className="form-grid">
 
-              <select
-                id="employeeId"
-                name="employeeId"
-                value={form.employeeId}
-                onChange={handleChange}
-              >
-                <option value="">
-                  Select employee
-                </option>
+              <div className="form-field">
+                <label htmlFor="payrollNumber">
+                  Payroll Number *
+                </label>
 
-                {employees.map((employee) => (
-                  <option
-                    key={employee._id}
-                    value={employee._id}
-                  >
-                    {employee.employeeId} —{' '}
-                    {employee.fullName}
+                <input
+                  id="payrollNumber"
+                  name="payrollNumber"
+                  type="text"
+                  value={form.payrollNumber}
+                  onChange={handleChange}
+                  placeholder="PAYROLL-2026-002"
+                />
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="employeeId">
+                  Employee *
+                </label>
+
+                <select
+                  id="employeeId"
+                  name="employeeId"
+                  value={form.employeeId}
+                  onChange={handleChange}
+                >
+                  <option value="">
+                    Select employee
                   </option>
-                ))}
-              </select>
-            </div>
 
-            <div className="form-field">
-              <label htmlFor="salaryMonth">
-                Salary Month *
-              </label>
+                  {employees.map((employee) => (
+                    <option
+                      key={employee._id}
+                      value={employee._id}
+                    >
+                      {employee.employeeId} —{' '}
+                      {employee.fullName}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-              <input
-                id="salaryMonth"
-                name="salaryMonth"
-                type="month"
-                value={getMonthValue(
-                  form.salaryMonth
-                )}
-                onChange={(event) => {
-                  const value = event.target.value;
+              <div className="form-field">
+                <label htmlFor="salaryMonth">
+                  Salary Month *
+                </label>
 
-                  if (!value) {
-                    setForm((previous) => ({
-                      ...previous,
-                      salaryMonth: ''
-                    }));
+                <input
+                  id="salaryMonth"
+                  name="salaryMonth"
+                  type="month"
+                  value={getMonthValue(
+                    form.salaryMonth
+                  )}
+                  onChange={(event) => {
+                    const value = event.target.value;
 
-                    return;
-                  }
+                    if (!value) {
+                      setForm((previous) => ({
+                        ...previous,
+                        salaryMonth: ''
+                      }));
 
-                  const [year, month] =
-                    value.split('-');
+                      return;
+                    }
 
-                  const date = new Date(
-                    Number(year),
-                    Number(month) - 1,
-                    1
-                  );
+                    const [year, month] =
+                      value.split('-');
 
-                  const formatted =
-                    date.toLocaleDateString(
-                      'en-US',
-                      {
-                        month: 'long',
-                        year: 'numeric'
-                      }
+                    const date = new Date(
+                      Number(year),
+                      Number(month) - 1,
+                      1
                     );
 
-                  setForm((previous) => ({
-                    ...previous,
-                    salaryMonth: formatted
-                  }));
-                }}
-              />
-            </div>
+                    const formatted =
+                      date.toLocaleDateString(
+                        'en-US',
+                        {
+                          month: 'long',
+                          year: 'numeric'
+                        }
+                      );
 
-            <div className="form-field">
-              <label htmlFor="basicSalary">
-                Basic Salary *
-              </label>
-
-              <input
-                id="basicSalary"
-                name="basicSalary"
-                type="number"
-                min="0"
-                step="0.01"
-                value={form.basicSalary}
-                onChange={handleChange}
-                placeholder="45000"
-              />
-            </div>
-
-            <div className="form-field">
-              <label htmlFor="bonus">
-                Bonus
-              </label>
-
-              <input
-                id="bonus"
-                name="bonus"
-                type="number"
-                min="0"
-                step="0.01"
-                value={form.bonus}
-                onChange={handleChange}
-                placeholder="3000"
-              />
-            </div>
-
-            <div className="form-field">
-              <label htmlFor="deductions">
-                Deductions
-              </label>
-
-              <input
-                id="deductions"
-                name="deductions"
-                type="number"
-                min="0"
-                step="0.01"
-                value={form.deductions}
-                onChange={handleChange}
-                placeholder="2000"
-              />
-            </div>
-
-            <div className="form-field">
-              <label htmlFor="paymentDate">
-                Payment Date
-              </label>
-
-              <input
-                id="paymentDate"
-                name="paymentDate"
-                type="date"
-                value={form.paymentDate}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="form-field">
-              <label htmlFor="paymentStatus">
-                Payment Status
-              </label>
-
-              <select
-                id="paymentStatus"
-                name="paymentStatus"
-                value={form.paymentStatus}
-                onChange={handleChange}
-              >
-                <option value="Pending">
-                  Pending
-                </option>
-                <option value="Processed">
-                  Processed
-                </option>
-                <option value="Paid">
-                  Paid
-                </option>
-              </select>
-            </div>
-
-            <div className="form-field">
-              <label htmlFor="paymentMethod">
-                Payment Method
-              </label>
-
-              <select
-                id="paymentMethod"
-                name="paymentMethod"
-                value={form.paymentMethod}
-                onChange={handleChange}
-              >
-                <option value="Bank Transfer">
-                  Bank Transfer
-                </option>
-                <option value="Cash">
-                  Cash
-                </option>
-                <option value="Cheque">
-                  Cheque
-                </option>
-                <option value="Other">
-                  Other
-                </option>
-              </select>
-            </div>
-
-            <div className="form-field">
-              <label htmlFor="notes">
-                Notes
-              </label>
-
-              <textarea
-                id="notes"
-                name="notes"
-                value={form.notes}
-                onChange={handleChange}
-                placeholder="Additional payroll notes"
-              />
-            </div>
-
-            <div className="payroll-calculation">
-              <div>
-                <span>Basic Salary</span>
-                <strong>
-                  {formatCurrency(basicSalary)}
-                </strong>
+                    setForm((previous) => ({
+                      ...previous,
+                      salaryMonth: formatted
+                    }));
+                  }}
+                />
               </div>
 
-              <div>
-                <span>Bonus</span>
-                <strong>
-                  {formatCurrency(bonus)}
-                </strong>
+              <div className="form-field">
+                <label htmlFor="basicSalary">
+                  Basic Salary *
+                </label>
+
+                <input
+                  id="basicSalary"
+                  name="basicSalary"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={form.basicSalary}
+                  onChange={handleChange}
+                  placeholder="45000"
+                />
               </div>
 
-              <div>
-                <span>Deductions</span>
-                <strong>
-                  -{formatCurrency(deductions)}
-                </strong>
+              <div className="form-field">
+                <label htmlFor="bonus">
+                  Bonus
+                </label>
+
+                <input
+                  id="bonus"
+                  name="bonus"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={form.bonus}
+                  onChange={handleChange}
+                  placeholder="3000"
+                />
               </div>
 
-              <div className="net-total">
-                <span>Net Salary</span>
-                <strong>
-                  {formatCurrency(
-                    calculatedNetSalary
-                  )}
-                </strong>
+              <div className="form-field">
+                <label htmlFor="deductions">
+                  Deductions
+                </label>
+
+                <input
+                  id="deductions"
+                  name="deductions"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={form.deductions}
+                  onChange={handleChange}
+                  placeholder="2000"
+                />
               </div>
+
+              <div className="form-field">
+                <label htmlFor="paymentDate">
+                  Payment Date
+                </label>
+
+                <input
+                  id="paymentDate"
+                  name="paymentDate"
+                  type="date"
+                  value={form.paymentDate}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="paymentStatus">
+                  Payment Status
+                </label>
+
+                <select
+                  id="paymentStatus"
+                  name="paymentStatus"
+                  value={form.paymentStatus}
+                  onChange={handleChange}
+                >
+                  <option value="Pending">
+                    Pending
+                  </option>
+
+                  <option value="Processed">
+                    Processed
+                  </option>
+
+                  <option value="Paid">
+                    Paid
+                  </option>
+                </select>
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="paymentMethod">
+                  Payment Method
+                </label>
+
+                <select
+                  id="paymentMethod"
+                  name="paymentMethod"
+                  value={form.paymentMethod}
+                  onChange={handleChange}
+                >
+                  <option value="Bank Transfer">
+                    Bank Transfer
+                  </option>
+
+                  <option value="Cash">
+                    Cash
+                  </option>
+
+                  <option value="Cheque">
+                    Cheque
+                  </option>
+
+                  <option value="Other">
+                    Other
+                  </option>
+                </select>
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="notes">
+                  Notes
+                </label>
+
+                <textarea
+                  id="notes"
+                  name="notes"
+                  value={form.notes}
+                  onChange={handleChange}
+                  placeholder="Additional payroll notes"
+                />
+              </div>
+
+              <div className="payroll-calculation">
+
+                <div>
+                  <span>Basic Salary</span>
+
+                  <strong>
+                    {formatCurrency(basicSalary)}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>Bonus</span>
+
+                  <strong>
+                    {formatCurrency(bonus)}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>Deductions</span>
+
+                  <strong>
+                    -{formatCurrency(deductions)}
+                  </strong>
+                </div>
+
+                <div className="net-total">
+                  <span>Net Salary</span>
+
+                  <strong>
+                    {formatCurrency(
+                      calculatedNetSalary
+                    )}
+                  </strong>
+                </div>
+
+              </div>
+
             </div>
-          </div>
 
-          <div className="form-actions">
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={submitting}
-            >
-              {submitting
-                ? 'Saving...'
-                : editingId
-                ? 'Update Payroll'
-                : 'Process Payroll'}
-            </button>
+            <div className="form-actions">
 
-            {editingId && (
               <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={resetForm}
+                type="submit"
+                className="btn btn-primary"
+                disabled={submitting}
               >
-                Cancel Edit
+                {submitting
+                  ? 'Saving...'
+                  : editingId
+                    ? 'Update Payroll'
+                    : 'Process Payroll'}
               </button>
-            )}
-          </div>
-        </form>
-      </section>
+
+              {editingId && (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={resetForm}
+                >
+                  Cancel Edit
+                </button>
+              )}
+
+            </div>
+
+          </form>
+
+        </section>
+      )}
 
       {/* Payroll Register */}
 
       <section className="editorial-section">
+
         <div className="section-heading">
-          <h2>Payroll Register</h2>
+
+          <h2>
+            {canManagePayroll
+              ? 'Payroll Register'
+              : 'My Payroll'}
+          </h2>
 
           <p>
-            Review and manage employee salary
-            records.
+            {canManagePayroll
+              ? 'Review and manage employee salary records.'
+              : 'Review your salary and payment records.'}
           </p>
+
         </div>
 
+        {/* Search and filter */}
+
         <div className="table-toolbar">
+
           <div className="table-search">
+
             <input
               type="text"
               value={search}
               onChange={(event) =>
                 setSearch(event.target.value)
               }
-              placeholder="Search employee, payroll number or month..."
+              placeholder={
+                canManagePayroll
+                  ? 'Search employee, payroll number or month...'
+                  : 'Search payroll number or month...'
+              }
             />
+
           </div>
 
           <div className="table-filter">
+
             <select
               value={statusFilter}
               onChange={(event) =>
@@ -828,25 +892,45 @@ export default function Payroll() {
                 Paid
               </option>
             </select>
+
           </div>
+
         </div>
 
+        {/* Loading */}
+
         {loading ? (
+
           <div className="empty-state">
+
             <i className="bi bi-hourglass-split"></i>
-            <p>Loading payroll records...</p>
+
+            <p>
+              Loading payroll records...
+            </p>
+
           </div>
+
         ) : filteredPayrolls.length === 0 ? (
+
           <div className="empty-state">
+
             <i className="bi bi-wallet2"></i>
+
             <p>
               No payroll records found.
             </p>
+
           </div>
+
         ) : (
+
           <div className="table-responsive">
+
             <table className="table editorial-table">
+
               <thead>
+
                 <tr>
                   <th>Payroll</th>
                   <th>Employee</th>
@@ -857,92 +941,109 @@ export default function Payroll() {
                   <th>Net Salary</th>
                   <th>Payment Date</th>
                   <th>Status</th>
-                  <th>Actions</th>
+
+                  {canManagePayroll && (
+                    <th>Actions</th>
+                  )}
+
                 </tr>
+
               </thead>
 
               <tbody>
-                {filteredPayrolls.map(
-                  (payroll) => {
-                    const employee =
-                      payroll.employeeId || {};
 
-                    return (
-                      <tr key={payroll._id}>
-                        <td>
-                          <span className="payroll-number">
-                            {payroll.payrollNumber}
-                          </span>
-                        </td>
+                {filteredPayrolls.map((payroll) => {
 
-                        <td>
-                          <strong>
-                            {employee.fullName ||
-                              'Unknown Employee'}
-                          </strong>
+                  const employee =
+                    payroll.employeeId || {};
 
-                          <small className="d-block text-muted">
-                            {employee.employeeId ||
-                              ''}
-                          </small>
-                        </td>
+                  return (
 
-                        <td>
-                          {payroll.salaryMonth}
-                        </td>
+                    <tr key={payroll._id}>
 
-                        <td>
+                      <td>
+
+                        <span className="payroll-number">
+                          {payroll.payrollNumber}
+                        </span>
+
+                      </td>
+
+                      <td>
+
+                        <strong>
+                          {employee.fullName ||
+                            'Unknown Employee'}
+                        </strong>
+
+                        <small className="d-block text-muted">
+                          {employee.employeeId || ''}
+                        </small>
+
+                      </td>
+
+                      <td>
+                        {payroll.salaryMonth}
+                      </td>
+
+                      <td>
+                        {formatCurrency(
+                          payroll.basicSalary
+                        )}
+                      </td>
+
+                      <td className="amount-positive">
+                        {formatCurrency(
+                          payroll.bonus
+                        )}
+                      </td>
+
+                      <td className="amount-negative">
+                        {formatCurrency(
+                          payroll.deductions
+                        )}
+                      </td>
+
+                      <td>
+
+                        <strong>
                           {formatCurrency(
-                            payroll.basicSalary
+                            payroll.netSalary
                           )}
-                        </td>
+                        </strong>
 
-                        <td className="amount-positive">
-                          {formatCurrency(
-                            payroll.bonus
-                          )}
-                        </td>
+                      </td>
 
-                        <td className="amount-negative">
-                          {formatCurrency(
-                            payroll.deductions
-                          )}
-                        </td>
+                      <td>
+                        {formatDate(
+                          payroll.paymentDate
+                        )}
+                      </td>
+
+                      <td>
+
+                        <span
+                          className={`status-badge ${getStatusClass(
+                            payroll.paymentStatus
+                          )}`}
+                        >
+                          {payroll.paymentStatus}
+                        </span>
+
+                      </td>
+
+                      {canManagePayroll && (
 
                         <td>
-                          <strong>
-                            {formatCurrency(
-                              payroll.netSalary
-                            )}
-                          </strong>
-                        </td>
 
-                        <td>
-                          {formatDate(
-                            payroll.paymentDate
-                          )}
-                        </td>
-
-                        <td>
-                          <span
-                            className={`status-badge ${getStatusClass(
-                              payroll.paymentStatus
-                            )}`}
-                          >
-                            {payroll.paymentStatus}
-                          </span>
-                        </td>
-
-                        <td>
                           <div className="table-actions">
+
                             <button
                               type="button"
                               className="btn btn-outline-secondary"
                               title="Edit payroll"
                               onClick={() =>
-                                handleEdit(
-                                  payroll
-                                )
+                                handleEdit(payroll)
                               }
                             >
                               <i className="bi bi-pencil"></i>
@@ -960,17 +1061,29 @@ export default function Payroll() {
                             >
                               <i className="bi bi-trash"></i>
                             </button>
+
                           </div>
+
                         </td>
-                      </tr>
-                    );
-                  }
-                )}
+
+                      )}
+
+                    </tr>
+
+                  );
+                })}
+
               </tbody>
+
             </table>
+
           </div>
+
         )}
+
       </section>
+
     </div>
   );
 }
+

@@ -249,10 +249,32 @@ const deleteEmployee = async (req, res) => {
   }
 };
 
+// Get logged-in employee's own profile
+const getMyEmployeeProfile = async (req, res) => {
+  try {
+    const employee = await Employee.findOne({
+      userId: req.user._id
+    }).populate('userId', 'name email role');
+
+    if (!employee) {
+      return res.status(404).json({
+        message: 'Employee profile not found'
+      });
+    }
+
+    res.json(employee);
+  } catch (error) {
+    res.status(500).json({
+      message: 'Failed to fetch your employee profile',
+      error: error.message
+    });
+  }
+};
 
 module.exports = {
   getEmployees,
   getEmployeeById,
+  getMyEmployeeProfile,
   createEmployee,
   updateEmployee,
   deleteEmployee

@@ -23,6 +23,13 @@ import Attendance from "./pages/Attendance";
 import Leave from "./pages/Leave";
 import PettyCash from "./pages/PettyCash";
 import Payroll from "./pages/Payroll";
+import Reports from "./pages/Reports";
+import Notifications from "./pages/Notifications";
+import CmsPages from "./pages/CmsPages";
+import CmsServices from "./pages/CmsServices";
+import CmsPosts from "./pages/CmsPosts";
+import CmsInquiries from "./pages/CmsInquiries";
+import MyProfile from "./pages/MyProfile";
 
 import ProtectedRoute from "./routes/ProtectedRoute";
 import DashboardLayout from "./layouts/DashboardLayout";
@@ -91,7 +98,18 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* -------------------------------------------------
+            NOTIFICATIONS
+            Available to all authenticated users
+            ------------------------------------------------- */}
+
+        <Route path="/notifications" element={<Notifications />} />
       </Route>
+
+      {/* =====================================================
+          ADMIN ROUTES
+          ===================================================== */}
 
       <Route
         path="/lawyers"
@@ -105,7 +123,7 @@ function App() {
       <Route
         path="/cases"
         element={
-          <ProtectedRoute allowedRoles={["admin"]}>
+          <ProtectedRoute allowedRoles={["admin", "lawyer"]}>
             <Cases />
           </ProtectedRoute>
         }
@@ -114,7 +132,7 @@ function App() {
       <Route
         path="/appointments"
         element={
-          <ProtectedRoute allowedRoles={["admin"]}>
+          <ProtectedRoute allowedRoles={["admin", "lawyer"]}>
             <Appointments />
           </ProtectedRoute>
         }
@@ -123,7 +141,7 @@ function App() {
       <Route
         path="/documents"
         element={
-          <ProtectedRoute allowedRoles={["admin"]}>
+          <ProtectedRoute allowedRoles={["admin", "lawyer"]}>
             <Documents />
           </ProtectedRoute>
         }
@@ -132,7 +150,7 @@ function App() {
       <Route
         path="/billing"
         element={
-          <ProtectedRoute allowedRoles={["admin"]}>
+          <ProtectedRoute allowedRoles={["admin", "accountant"]}>
             <Billing />
           </ProtectedRoute>
         }
@@ -141,7 +159,7 @@ function App() {
       <Route
         path="/client-payments"
         element={
-          <ProtectedRoute allowedRoles={["admin"]}>
+          <ProtectedRoute allowedRoles={["admin", "accountant"]}>
             <ClientPayments />
           </ProtectedRoute>
         }
@@ -150,7 +168,7 @@ function App() {
       <Route
         path="/receipts/:id"
         element={
-          <ProtectedRoute allowedRoles={["admin"]}>
+          <ProtectedRoute allowedRoles={["admin", "accountant"]}>
             <Receipt />
           </ProtectedRoute>
         }
@@ -186,7 +204,7 @@ function App() {
       <Route
         path="/attendance"
         element={
-          <ProtectedRoute allowedRoles={["admin"]}>
+          <ProtectedRoute allowedRoles={["admin" , "employee"]}>
             <Attendance />
           </ProtectedRoute>
         }
@@ -195,7 +213,7 @@ function App() {
       <Route
         path="/leave"
         element={
-          <ProtectedRoute allowedRoles={["admin"]}>
+          <ProtectedRoute allowedRoles={["admin"  , "employee"]}>
             <Leave />
           </ProtectedRoute>
         }
@@ -204,7 +222,7 @@ function App() {
       <Route
         path="/petty-cash"
         element={
-          <ProtectedRoute allowedRoles={["admin"]}>
+          <ProtectedRoute allowedRoles={["admin", "accountant"]}>
             <PettyCash />
           </ProtectedRoute>
         }
@@ -213,7 +231,7 @@ function App() {
       <Route
         path="/payroll"
         element={
-          <ProtectedRoute allowedRoles={["admin"]}>
+          <ProtectedRoute allowedRoles={["admin", "accountant", "employee"]}>
             <Payroll />
           </ProtectedRoute>
         }
@@ -222,8 +240,62 @@ function App() {
       <Route
         path="/vendors"
         element={
-          <ProtectedRoute allowedRoles={["admin"]}>
+          <ProtectedRoute allowedRoles={["admin", "accountant"]}>
             <Vendors />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/reports"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <Reports />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/cms-pages"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <CmsPages />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/cms-services"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <CmsServices />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/cms-posts"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <CmsPosts />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/cms-inquiries"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <CmsInquiries />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute allowedRoles={["employee"]}>
+            <MyProfile />
           </ProtectedRoute>
         }
       />

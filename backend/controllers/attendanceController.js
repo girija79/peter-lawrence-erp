@@ -185,9 +185,41 @@ const deleteAttendance = async (req, res) => {
   }
 };
 
+// Get logged-in employee's attendance
+const getMyAttendance = async (req, res) => {
+  try {
+    const employee = await Employee.findOne({
+      userId: req.user._id
+    });
+
+    if (!employee) {
+      return res.status(404).json({
+        message: 'Employee profile not found'
+      });
+    }
+
+    const attendance = await Attendance.find({
+      employeeId: employee._id
+    })
+      .populate(
+        'employeeId',
+        'employeeId fullName department designation'
+      )
+      .sort({ attendanceDate: -1 });
+
+    res.json(attendance);
+  } catch (error) {
+    res.status(500).json({
+      message: 'Failed to fetch your attendance',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   getAttendance,
   getAttendanceById,
+  getMyAttendance,
   createAttendance,
   updateAttendance,
   deleteAttendance

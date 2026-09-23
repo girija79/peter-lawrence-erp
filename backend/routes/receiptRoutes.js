@@ -13,7 +13,7 @@ const router = express.Router();
 router.get(
   '/:id',
   protect,
-  authorize('admin'),
+  authorize('admin' , 'accountant'),
   getPaymentReceipt
 );
 

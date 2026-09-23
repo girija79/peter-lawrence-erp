@@ -3,7 +3,9 @@ const express = require('express');
 const {
   getLeaves,
   getLeaveById,
+  getMyLeaves,
   createLeave,
+  createMyLeave,
   updateLeave,
   deleteLeave
 } = require('../controllers/leaveController');
@@ -12,6 +14,20 @@ const { protect } = require('../middleware/auth');
 const { authorize } = require('../middleware/roleCheck');
 
 const router = express.Router();
+
+router.get(
+  '/me',
+  protect,
+  authorize('employee'),
+  getMyLeaves
+);
+
+router.post(
+  '/me',
+  protect,
+  authorize('employee'),
+  createMyLeave
+);
 
 // Admin only
 router.get(

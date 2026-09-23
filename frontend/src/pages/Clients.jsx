@@ -1,7 +1,13 @@
-import { useEffect, useState } from 'react';
-import axios from 'axios';
+import { useContext, useEffect, useState } from 'react';
+import api from '../api/axios';
+import { AuthContext } from '../context/AuthContext';
 
 function Clients() {
+  const { user } = useContext(AuthContext);
+
+  const isAdmin = user?.role === 'admin';
+  const isLawyer = user?.role === 'lawyer';
+
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -17,21 +23,16 @@ function Clients() {
 
   const fetchClients = async () => {
     try {
-      const token = localStorage.getItem('token');
-
-      const response = await axios.get(
-        'http://localhost:5000/api/clients',
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
-
-      setClients(response.data);
+      setLoading(true);
       setError('');
 
+      const response = await api.get('/clients');
+
+      setClients(response.data);
+
     } catch (err) {
+      console.error('Fetch Clients Error:', err);
+
       setError(
         err.response?.data?.message ||
         'Failed to load clients'
@@ -42,8 +43,10 @@ function Clients() {
   };
 
   useEffect(() => {
-    fetchClients();
-  }, []);
+    if (user) {
+      fetchClients();
+    }
+  }, [user]);
 
   const resetForm = () => {
     setFullName('');
@@ -58,11 +61,12 @@ function Clients() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!isAdmin) return;
+
     setError('');
 
     try {
-      const token = localStorage.getItem('token');
-
       const data = {
         fullName,
         email,
@@ -72,31 +76,24 @@ function Clients() {
       };
 
       if (editingClientId) {
-        await axios.put(
-          `http://localhost:5000/api/clients/${editingClientId}`,
-          data,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          }
+        await api.put(
+          `/clients/${editingClientId}`,
+          data
         );
       } else {
-        await axios.post(
-          'http://localhost:5000/api/clients',
-          data,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          }
+        await api.post(
+          '/clients',
+          data
         );
       }
 
       resetForm();
+
       await fetchClients();
 
     } catch (err) {
+      console.error('Save Client Error:', err);
+
       setError(
         err.response?.data?.message ||
         'Failed to save client'
@@ -105,10 +102,12 @@ function Clients() {
   };
 
   const handleEdit = (client) => {
+    if (!isAdmin) return;
+
     setEditingClientId(client._id);
 
-    setFullName(client.fullName);
-    setEmail(client.email);
+    setFullName(client.fullName || '');
+    setEmail(client.email || '');
     setPhone(client.phone || '');
     setAddress(client.address || '');
     setCompany(client.company || '');
@@ -118,6 +117,8 @@ function Clients() {
   };
 
   const handleDelete = async (client) => {
+    if (!isAdmin) return;
+
     const confirmed = window.confirm(
       `Are you sure you want to delete ${client.fullName}?`
     );
@@ -129,15 +130,8 @@ function Clients() {
     try {
       setError('');
 
-      const token = localStorage.getItem('token');
-
-      await axios.delete(
-        `http://localhost:5000/api/clients/${client._id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
+      await api.delete(
+        `/clients/${client._id}`
       );
 
       setClients((currentClients) =>
@@ -147,6 +141,8 @@ function Clients() {
       );
 
     } catch (err) {
+      console.error('Delete Client Error:', err);
+
       setError(
         err.response?.data?.message ||
         'Failed to delete client'
@@ -157,51 +153,64 @@ function Clients() {
   return (
     <div className="clients-page">
 
-      {/* Page Header */}
+      {/* PAGE HEADER */}
       <div className="page-header clients-header">
 
         <div>
           <div className="page-kicker">
-            WORKSPACE · CLIENT RELATIONS
+            {isLawyer
+              ? 'WORKSPACE · CLIENT RELATIONS'
+              : 'WORKSPACE · CLIENT RELATIONS'}
           </div>
 
           <h1 className="page-title">
-            Clients
+            {isLawyer ? 'My Clients' : 'Clients'}
           </h1>
 
           <p className="page-description">
-            Maintain client records and contact information
-            for the Peter Lawrence legal office.
+            {isLawyer
+              ? 'Review clients connected to your assigned legal matters.'
+              : 'Maintain client records and contact information for the Peter Lawrence legal office.'
+            }
           </p>
         </div>
 
-        <button
-          className="pl-button pl-button-primary"
-          onClick={() => {
-            setError('');
-            resetForm();
-            setShowForm(true);
-          }}
-        >
-          <i className="bi bi-person-plus"></i>
-          Add client
-        </button>
+        {/* ADMIN ONLY */}
+        {isAdmin && (
+          <button
+            className="pl-button pl-button-primary"
+            onClick={() => {
+              setError('');
+              resetForm();
+              setShowForm(true);
+            }}
+          >
+            <i className="bi bi-person-plus"></i>
+            Add client
+          </button>
+        )}
 
       </div>
 
 
-      {/* Summary */}
+      {/* SUMMARY */}
       <div className="users-summary clients-summary">
 
         <div className="users-summary-item">
-          <span>Total clients</span>
-          <strong>{clients.length}</strong>
+          <span>
+            {isLawyer ? 'My clients' : 'Total clients'}
+          </span>
+
+          <strong>
+            {clients.length}
+          </strong>
         </div>
 
         <div className="users-summary-divider"></div>
 
         <div className="users-summary-item">
           <span>With company</span>
+
           <strong>
             {clients.filter(
               (client) => client.company
@@ -213,6 +222,7 @@ function Clients() {
 
         <div className="users-summary-item">
           <span>Individuals</span>
+
           <strong>
             {clients.filter(
               (client) => !client.company
@@ -223,17 +233,20 @@ function Clients() {
       </div>
 
 
-      {/* Error */}
+      {/* ERROR */}
       {error && (
         <div className="pl-alert pl-alert-danger">
           <i className="bi bi-exclamation-circle"></i>
-          <span>{error}</span>
+
+          <span>
+            {error}
+          </span>
         </div>
       )}
 
 
-      {/* Add / Edit Form */}
-      {showForm && (
+      {/* ADMIN ONLY — ADD / EDIT FORM */}
+      {isAdmin && showForm && (
         <div className="pl-form-panel">
 
           <div className="pl-form-header">
@@ -266,7 +279,7 @@ function Clients() {
 
             <div className="pl-form-grid">
 
-              {/* Full Name */}
+              {/* FULL NAME */}
               <div className="pl-form-field">
 
                 <label htmlFor="client-name">
@@ -287,7 +300,7 @@ function Clients() {
               </div>
 
 
-              {/* Email */}
+              {/* EMAIL */}
               <div className="pl-form-field">
 
                 <label htmlFor="client-email">
@@ -308,7 +321,7 @@ function Clients() {
               </div>
 
 
-              {/* Phone */}
+              {/* PHONE */}
               <div className="pl-form-field">
 
                 <label htmlFor="client-phone">
@@ -328,7 +341,7 @@ function Clients() {
               </div>
 
 
-              {/* Company */}
+              {/* COMPANY */}
               <div className="pl-form-field">
 
                 <label htmlFor="client-company">
@@ -348,7 +361,7 @@ function Clients() {
               </div>
 
 
-              {/* Address */}
+              {/* ADDRESS */}
               <div className="pl-form-field pl-form-field-full">
 
                 <label htmlFor="client-address">
@@ -405,19 +418,21 @@ function Clients() {
       )}
 
 
-      {/* Loading */}
+      {/* LOADING */}
       {loading && (
         <div className="pl-loading">
 
           <div className="pl-loading-line"></div>
 
-          <p>Loading client records...</p>
+          <p>
+            Loading client records...
+          </p>
 
         </div>
       )}
 
 
-      {/* Clients Table */}
+      {/* CLIENT TABLE */}
       {!loading && (
         <div className="pl-table-panel">
 
@@ -425,11 +440,15 @@ function Clients() {
 
             <div>
               <div className="page-kicker">
-                CLIENT DIRECTORY
+                {isLawyer
+                  ? 'ASSIGNED CLIENTS'
+                  : 'CLIENT DIRECTORY'}
               </div>
 
               <h2>
-                Client records
+                {isLawyer
+                  ? 'My client records'
+                  : 'Client records'}
               </h2>
             </div>
 
@@ -448,13 +467,21 @@ function Clients() {
             <table className="pl-table">
 
               <thead>
+
                 <tr>
                   <th>CLIENT</th>
                   <th>EMAIL</th>
                   <th>PHONE</th>
                   <th>COMPANY</th>
-                  <th className="text-end">ACTIONS</th>
+
+                  {/* ADMIN ONLY */}
+                  {isAdmin && (
+                    <th className="text-end">
+                      ACTIONS
+                    </th>
+                  )}
                 </tr>
+
               </thead>
 
 
@@ -463,18 +490,28 @@ function Clients() {
                 {clients.length === 0 ? (
 
                   <tr>
+
                     <td
-                      colSpan="5"
+                      colSpan={isAdmin ? 5 : 4}
                       className="pl-empty-state"
                     >
+
                       <i className="bi bi-person-vcard"></i>
 
-                      <strong>No client records</strong>
+                      <strong>
+                        {isLawyer
+                          ? 'No assigned clients'
+                          : 'No client records'}
+                      </strong>
 
                       <span>
-                        Add a client using the button above.
+                        {isLawyer
+                          ? 'Clients connected to your assigned cases will appear here.'
+                          : 'Add a client using the button above.'}
                       </span>
+
                     </td>
+
                   </tr>
 
                 ) : (
@@ -483,7 +520,7 @@ function Clients() {
 
                     <tr key={client._id}>
 
-                      {/* Client */}
+                      {/* CLIENT */}
                       <td>
 
                         <div className="user-cell">
@@ -495,6 +532,7 @@ function Clients() {
                           </div>
 
                           <div>
+
                             <strong>
                               {client.fullName}
                             </strong>
@@ -502,6 +540,7 @@ function Clients() {
                             <span>
                               Client
                             </span>
+
                           </div>
 
                         </div>
@@ -509,7 +548,7 @@ function Clients() {
                       </td>
 
 
-                      {/* Email */}
+                      {/* EMAIL */}
                       <td>
                         <span className="user-email">
                           {client.email}
@@ -517,7 +556,7 @@ function Clients() {
                       </td>
 
 
-                      {/* Phone */}
+                      {/* PHONE */}
                       <td>
                         <span className="user-email">
                           {client.phone || '—'}
@@ -525,48 +564,56 @@ function Clients() {
                       </td>
 
 
-                      {/* Company */}
+                      {/* COMPANY */}
                       <td>
+
                         {client.company ? (
+
                           <span className="client-company">
                             {client.company}
                           </span>
+
                         ) : (
+
                           <span className="client-empty-value">
                             Individual
                           </span>
+
                         )}
-                      </td>
-
-
-                      {/* Actions */}
-                      <td>
-
-                        <div className="user-actions">
-
-                          <button
-                            className="user-action-button"
-                            title="Edit client"
-                            onClick={() =>
-                              handleEdit(client)
-                            }
-                          >
-                            <i className="bi bi-pencil"></i>
-                          </button>
-
-                          <button
-                            className="user-action-button user-action-delete"
-                            title="Delete client"
-                            onClick={() =>
-                              handleDelete(client)
-                            }
-                          >
-                            <i className="bi bi-trash3"></i>
-                          </button>
-
-                        </div>
 
                       </td>
+
+
+                      {/* ADMIN ACTIONS */}
+                      {isAdmin && (
+                        <td>
+
+                          <div className="user-actions">
+
+                            <button
+                              className="user-action-button"
+                              title="Edit client"
+                              onClick={() =>
+                                handleEdit(client)
+                              }
+                            >
+                              <i className="bi bi-pencil"></i>
+                            </button>
+
+                            <button
+                              className="user-action-button user-action-delete"
+                              title="Delete client"
+                              onClick={() =>
+                                handleDelete(client)
+                              }
+                            >
+                              <i className="bi bi-trash3"></i>
+                            </button>
+
+                          </div>
+
+                        </td>
+                      )}
 
                     </tr>
 

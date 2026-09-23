@@ -1,5 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+
+import {
+  useContext,
+  useEffect,
+  useMemo,
+  useState
+} from 'react';
+
 import api from '../api/axios';
+import { AuthContext } from '../context/AuthContext';
 
 const initialForm = {
   employeeId: '',
@@ -27,6 +35,11 @@ const statuses = [
 ];
 
 function Leave() {
+  const { user } = useContext(AuthContext);
+
+  const isAdmin = user?.role === 'admin';
+  const isEmployee = user?.role === 'employee';
+
   const [leaves, setLeaves] = useState([]);
   const [employees, setEmployees] = useState([]);
 
@@ -43,21 +56,33 @@ function Leave() {
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (user) {
+      fetchData();
+    }
+  }, [user]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
       setError('');
 
-      const [leavesResponse, employeesResponse] = await Promise.all([
-        api.get('/leaves'),
-        api.get('/employees')
-      ]);
+      if (isEmployee) {
+        const response = await api.get('/leaves/me');
 
-      setLeaves(leavesResponse.data || []);
-      setEmployees(employeesResponse.data || []);
+        setLeaves(response.data || []);
+        setEmployees([]);
+      } else {
+        const [
+          leavesResponse,
+          employeesResponse
+        ] = await Promise.all([
+          api.get('/leaves'),
+          api.get('/employees')
+        ]);
+
+        setLeaves(leavesResponse.data || []);
+        setEmployees(employeesResponse.data || []);
+      }
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -88,39 +113,72 @@ function Leave() {
     setError('');
     setSuccess('');
 
-    if (!form.employeeId) {
-      setError('Please select an employee.');
-      return;
-    }
-
     if (!form.fromDate || !form.toDate) {
-      setError('Please select both from and to dates.');
+      setError(
+        'Please select both from and to dates.'
+      );
       return;
     }
 
-    if (new Date(form.toDate) < new Date(form.fromDate)) {
-      setError('To date cannot be before from date.');
+    if (
+      new Date(form.toDate) <
+      new Date(form.fromDate)
+    ) {
+      setError(
+        'To date cannot be before from date.'
+      );
       return;
     }
 
     if (!form.reason.trim()) {
-      setError('Please enter a reason for the leave.');
+      setError(
+        'Please enter a reason for the leave.'
+      );
+      return;
+    }
+
+    if (isAdmin && !form.employeeId) {
+      setError('Please select an employee.');
       return;
     }
 
     try {
       setSaving(true);
 
-      if (editingId) {
-        await api.put(`/leaves/${editingId}`, form);
-        setSuccess('Leave record updated successfully.');
+      if (isEmployee) {
+        // Employee can only submit leave for themselves.
+        // employeeId is intentionally NOT sent.
+        await api.post('/leaves/me', {
+          leaveType: form.leaveType,
+          fromDate: form.fromDate,
+          toDate: form.toDate,
+          reason: form.reason,
+          remarks: form.remarks
+        });
+
+        setSuccess(
+          'Leave request submitted successfully. It is now pending review.'
+        );
+      } else if (editingId) {
+        await api.put(
+          `/leaves/${editingId}`,
+          form
+        );
+
+        setSuccess(
+          'Leave record updated successfully.'
+        );
       } else {
         await api.post('/leaves', form);
-        setSuccess('Leave request recorded successfully.');
+
+        setSuccess(
+          'Leave request recorded successfully.'
+        );
       }
 
       resetForm();
       await fetchData();
+
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -132,20 +190,40 @@ function Leave() {
   };
 
   const handleEdit = (leave) => {
+    if (!isAdmin) return;
+
     setEditingId(leave._id);
 
     setForm({
-      employeeId: leave.employeeId?._id || leave.employeeId || '',
-      leaveType: leave.leaveType || 'Casual Leave',
+      employeeId:
+        leave.employeeId?._id ||
+        leave.employeeId ||
+        '',
+
+      leaveType:
+        leave.leaveType ||
+        'Casual Leave',
+
       fromDate: leave.fromDate
-        ? new Date(leave.fromDate).toISOString().split('T')[0]
+        ? new Date(leave.fromDate)
+            .toISOString()
+            .split('T')[0]
         : '',
+
       toDate: leave.toDate
-        ? new Date(leave.toDate).toISOString().split('T')[0]
+        ? new Date(leave.toDate)
+            .toISOString()
+            .split('T')[0]
         : '',
+
       reason: leave.reason || '',
-      status: leave.status || 'Pending',
-      remarks: leave.remarks || ''
+
+      status:
+        leave.status ||
+        'Pending',
+
+      remarks:
+        leave.remarks || ''
     });
 
     window.scrollTo({
@@ -155,6 +233,8 @@ function Leave() {
   };
 
   const handleDelete = async (id) => {
+    if (!isAdmin) return;
+
     const confirmed = window.confirm(
       'Are you sure you want to delete this leave record?'
     );
@@ -165,15 +245,20 @@ function Leave() {
       setError('');
       setSuccess('');
 
-      await api.delete(`/leaves/${id}`);
+      await api.delete(
+        `/leaves/${id}`
+      );
 
-      setSuccess('Leave record deleted successfully.');
+      setSuccess(
+        'Leave record deleted successfully.'
+      );
 
       if (editingId === id) {
         resetForm();
       }
 
       await fetchData();
+
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -183,37 +268,60 @@ function Leave() {
   };
 
   const filteredLeaves = useMemo(() => {
-    const searchValue = search.toLowerCase().trim();
+    const searchValue =
+      search.toLowerCase().trim();
 
     return leaves.filter((leave) => {
-      const employee = leave.employeeId || {};
+      const employee =
+        leave.employeeId || {};
 
       const matchesSearch =
         !searchValue ||
-        employee.fullName?.toLowerCase().includes(searchValue) ||
-        employee.employeeId?.toLowerCase().includes(searchValue) ||
-        leave.leaveType?.toLowerCase().includes(searchValue) ||
-        leave.reason?.toLowerCase().includes(searchValue);
+        employee.fullName
+          ?.toLowerCase()
+          .includes(searchValue) ||
+        employee.employeeId
+          ?.toLowerCase()
+          .includes(searchValue) ||
+        leave.leaveType
+          ?.toLowerCase()
+          .includes(searchValue) ||
+        leave.reason
+          ?.toLowerCase()
+          .includes(searchValue);
 
       const matchesStatus =
         statusFilter === 'All' ||
         leave.status === statusFilter;
 
-      return matchesSearch && matchesStatus;
+      return (
+        matchesSearch &&
+        matchesStatus
+      );
     });
-  }, [leaves, search, statusFilter]);
+  }, [
+    leaves,
+    search,
+    statusFilter
+  ]);
 
   const summary = useMemo(() => {
     return {
       total: leaves.length,
+
       pending: leaves.filter(
-        (leave) => leave.status === 'Pending'
+        (leave) =>
+          leave.status === 'Pending'
       ).length,
+
       approved: leaves.filter(
-        (leave) => leave.status === 'Approved'
+        (leave) =>
+          leave.status === 'Approved'
       ).length,
+
       rejected: leaves.filter(
-        (leave) => leave.status === 'Rejected'
+        (leave) =>
+          leave.status === 'Rejected'
       ).length
     };
   }, [leaves]);
@@ -221,11 +329,12 @@ function Leave() {
   const formatDate = (date) => {
     if (!date) return '—';
 
-    return new Date(date).toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    });
+    return new Date(date)
+      .toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
   };
 
   const getStatusClass = (status) => {
@@ -250,15 +359,23 @@ function Leave() {
       {/* PAGE HEADER */}
       <div className="page-header">
         <div>
+
           <div className="page-eyebrow">
             HUMAN RESOURCES
           </div>
 
-          <h1>Leave Management</h1>
+          <h1>
+            {isEmployee
+              ? 'My Leave'
+              : 'Leave Management'}
+          </h1>
 
           <p>
-            Manage employee leave requests, approvals and leave history.
+            {isEmployee
+              ? 'Apply for leave and view your leave history.'
+              : 'Manage employee leave requests, approvals and leave history.'}
           </p>
+
         </div>
       </div>
 
@@ -281,6 +398,7 @@ function Leave() {
       <div className="summary-grid leave-summary-grid">
 
         <div className="summary-card">
+
           <div className="summary-card-label">
             Total Requests
           </div>
@@ -290,11 +408,15 @@ function Leave() {
           </div>
 
           <div className="summary-card-note">
-            All leave records
+            {isEmployee
+              ? 'Your leave requests'
+              : 'All leave records'}
           </div>
+
         </div>
 
         <div className="summary-card">
+
           <div className="summary-card-label">
             Pending
           </div>
@@ -304,11 +426,15 @@ function Leave() {
           </div>
 
           <div className="summary-card-note">
-            Awaiting review
+            {isEmployee
+              ? 'Awaiting approval'
+              : 'Awaiting review'}
           </div>
+
         </div>
 
         <div className="summary-card">
+
           <div className="summary-card-label">
             Approved
           </div>
@@ -320,9 +446,11 @@ function Leave() {
           <div className="summary-card-note">
             Approved requests
           </div>
+
         </div>
 
         <div className="summary-card">
+
           <div className="summary-card-label">
             Rejected
           </div>
@@ -334,6 +462,7 @@ function Leave() {
           <div className="summary-card-note">
             Rejected requests
           </div>
+
         </div>
 
       </div>
@@ -342,19 +471,28 @@ function Leave() {
       <section className="editorial-section">
 
         <div className="section-heading">
+
           <div>
+
             <span className="section-kicker">
-              {editingId ? 'UPDATE RECORD' : 'NEW REQUEST'}
+              {isEmployee
+                ? 'LEAVE APPLICATION'
+                : editingId
+                  ? 'UPDATE RECORD'
+                  : 'NEW REQUEST'}
             </span>
 
             <h2>
-              {editingId
-                ? 'Edit Leave Record'
-                : 'Record Employee Leave'}
+              {isEmployee
+                ? 'Apply for Leave'
+                : editingId
+                  ? 'Edit Leave Record'
+                  : 'Record Employee Leave'}
             </h2>
+
           </div>
 
-          {editingId && (
+          {editingId && isAdmin && (
             <button
               type="button"
               className="btn-editorial-secondary"
@@ -364,39 +502,51 @@ function Leave() {
               Cancel Edit
             </button>
           )}
+
         </div>
 
         <form onSubmit={handleSubmit}>
 
           <div className="form-grid">
 
-            <div className="form-field">
-              <label>
-                Employee <span>*</span>
-              </label>
+            {/* ADMIN ONLY: EMPLOYEE */}
+            {isAdmin && (
+              <div className="form-field">
 
-              <select
-                name="employeeId"
-                value={form.employeeId}
-                onChange={handleChange}
-                required
-              >
-                <option value="">
-                  Select employee
-                </option>
+                <label>
+                  Employee <span>*</span>
+                </label>
 
-                {employees.map((employee) => (
-                  <option
-                    key={employee._id}
-                    value={employee._id}
-                  >
-                    {employee.employeeId} — {employee.fullName}
+                <select
+                  name="employeeId"
+                  value={form.employeeId}
+                  onChange={handleChange}
+                  required
+                >
+
+                  <option value="">
+                    Select employee
                   </option>
-                ))}
-              </select>
-            </div>
+
+                  {employees.map(
+                    (employee) => (
+                      <option
+                        key={employee._id}
+                        value={employee._id}
+                      >
+                        {employee.employeeId} —{' '}
+                        {employee.fullName}
+                      </option>
+                    )
+                  )}
+
+                </select>
+
+              </div>
+            )}
 
             <div className="form-field">
+
               <label>
                 Leave Type
               </label>
@@ -406,15 +556,24 @@ function Leave() {
                 value={form.leaveType}
                 onChange={handleChange}
               >
-                {leaveTypes.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
+
+                {leaveTypes.map(
+                  (type) => (
+                    <option
+                      key={type}
+                      value={type}
+                    >
+                      {type}
+                    </option>
+                  )
+                )}
+
               </select>
+
             </div>
 
             <div className="form-field">
+
               <label>
                 From Date <span>*</span>
               </label>
@@ -426,9 +585,11 @@ function Leave() {
                 onChange={handleChange}
                 required
               />
+
             </div>
 
             <div className="form-field">
+
               <label>
                 To Date <span>*</span>
               </label>
@@ -440,27 +601,41 @@ function Leave() {
                 onChange={handleChange}
                 required
               />
+
             </div>
 
-            <div className="form-field">
-              <label>
-                Status
-              </label>
+            {/* ADMIN ONLY: STATUS */}
+            {isAdmin && (
+              <div className="form-field">
 
-              <select
-                name="status"
-                value={form.status}
-                onChange={handleChange}
-              >
-                {statuses.map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </select>
-            </div>
+                <label>
+                  Status
+                </label>
+
+                <select
+                  name="status"
+                  value={form.status}
+                  onChange={handleChange}
+                >
+
+                  {statuses.map(
+                    (status) => (
+                      <option
+                        key={status}
+                        value={status}
+                      >
+                        {status}
+                      </option>
+                    )
+                  )}
+
+                </select>
+
+              </div>
+            )}
 
             <div className="form-field form-field-full">
+
               <label>
                 Reason <span>*</span>
               </label>
@@ -470,12 +645,18 @@ function Leave() {
                 value={form.reason}
                 onChange={handleChange}
                 rows="3"
-                placeholder="Enter the reason for leave..."
+                placeholder={
+                  isEmployee
+                    ? 'Explain why you need leave...'
+                    : 'Enter the reason for leave...'
+                }
                 required
               />
+
             </div>
 
             <div className="form-field form-field-full">
+
               <label>
                 Remarks
               </label>
@@ -485,8 +666,13 @@ function Leave() {
                 value={form.remarks}
                 onChange={handleChange}
                 rows="2"
-                placeholder="Optional administrative remarks..."
+                placeholder={
+                  isEmployee
+                    ? 'Optional additional information...'
+                    : 'Optional administrative remarks...'
+                }
               />
+
             </div>
 
           </div>
@@ -498,22 +684,27 @@ function Leave() {
               className="btn-editorial-primary"
               disabled={saving}
             >
+
               {saving ? (
                 <>
                   <span className="spinner-border spinner-border-sm me-2"></span>
-                  Saving...
+                  Submitting...
                 </>
               ) : (
                 <>
                   <i className="bi bi-check2"></i>
-                  {editingId
-                    ? 'Update Leave'
-                    : 'Record Leave'}
+
+                  {isEmployee
+                    ? 'Submit Leave Request'
+                    : editingId
+                      ? 'Update Leave'
+                      : 'Record Leave'}
                 </>
               )}
+
             </button>
 
-            {editingId && (
+            {editingId && isAdmin && (
               <button
                 type="button"
                 className="btn-editorial-secondary"
@@ -526,203 +717,323 @@ function Leave() {
           </div>
 
         </form>
+
       </section>
 
-      {/* TABLE */}
+      {/* LEAVE TABLE */}
       <section className="editorial-section">
 
         <div className="section-heading">
+
           <div>
+
             <span className="section-kicker">
-              LEAVE REGISTER
+              {isEmployee
+                ? 'MY LEAVE HISTORY'
+                : 'LEAVE REGISTER'}
             </span>
 
             <h2>
-              Employee Leave Records
+              {isEmployee
+                ? 'My Leave Records'
+                : 'Employee Leave Records'}
             </h2>
+
           </div>
+
         </div>
 
         {/* TOOLBAR */}
         <div className="table-toolbar">
 
           <div className="table-search">
+
             <i className="bi bi-search"></i>
 
             <input
               type="text"
-              placeholder="Search employee, ID, leave type or reason..."
+              placeholder={
+                isEmployee
+                  ? 'Search leave type or reason...'
+                  : 'Search employee, ID, leave type or reason...'
+              }
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) =>
+                setSearch(e.target.value)
+              }
             />
+
           </div>
 
           <div className="table-filter">
+
             <label>
               Status
             </label>
 
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) =>
+                setStatusFilter(
+                  e.target.value
+                )
+              }
             >
+
               <option value="All">
                 All
               </option>
 
-              {statuses.map((status) => (
-                <option key={status} value={status}>
-                  {status}
-                </option>
-              ))}
+              {statuses.map(
+                (status) => (
+                  <option
+                    key={status}
+                    value={status}
+                  >
+                    {status}
+                  </option>
+                )
+              )}
+
             </select>
+
           </div>
 
         </div>
 
+        {/* LOADING */}
         {loading ? (
+
           <div className="empty-state">
+
             <div className="spinner-border"></div>
 
-            <h3>Loading leave records</h3>
+            <h3>
+              Loading leave records
+            </h3>
 
             <p>
               Please wait while the records are being loaded.
             </p>
+
           </div>
+
         ) : filteredLeaves.length === 0 ? (
+
           <div className="empty-state">
+
             <i className="bi bi-calendar2-x"></i>
 
-            <h3>No leave records found</h3>
+            <h3>
+              No leave records found
+            </h3>
 
             <p>
-              No records match the current search or filter.
+              {isEmployee
+                ? 'Your leave requests will appear here.'
+                : 'No records match the current search or filter.'}
             </p>
+
           </div>
+
         ) : (
+
           <div className="table-responsive">
 
             <table className="table editorial-table">
 
               <thead>
+
                 <tr>
-                  <th>Employee</th>
-                  <th>Leave Type</th>
-                  <th>Period</th>
-                  <th>Days</th>
-                  <th>Reason</th>
-                  <th>Status</th>
-                  <th>Reviewed</th>
-                  <th>Actions</th>
+
+                  {isAdmin && (
+                    <th>
+                      Employee
+                    </th>
+                  )}
+
+                  <th>
+                    Leave Type
+                  </th>
+
+                  <th>
+                    Period
+                  </th>
+
+                  <th>
+                    Days
+                  </th>
+
+                  <th>
+                    Reason
+                  </th>
+
+                  <th>
+                    Status
+                  </th>
+
+                  <th>
+                    Reviewed
+                  </th>
+
+                  {isAdmin && (
+                    <th>
+                      Actions
+                    </th>
+                  )}
+
                 </tr>
+
               </thead>
 
               <tbody>
 
-                {filteredLeaves.map((leave) => {
+                {filteredLeaves.map(
+                  (leave) => {
 
-                  const employee = leave.employeeId || {};
-                  const reviewer = leave.reviewedBy || {};
+                    const employee =
+                      leave.employeeId || {};
 
-                  return (
-                    <tr key={leave._id}>
+                    const reviewer =
+                      leave.reviewedBy || {};
 
-                      <td>
-                        <div className="table-primary-text">
-                          {employee.fullName || 'Unknown Employee'}
-                        </div>
+                    return (
+                      <tr key={leave._id}>
 
-                        <div className="table-secondary-text">
-                          {employee.employeeId || '—'}
-                        </div>
-                      </td>
+                        {/* ADMIN ONLY */}
+                        {isAdmin && (
+                          <td>
 
-                      <td>
-                        {leave.leaveType}
-                      </td>
-
-                      <td>
-                        <div className="table-primary-text">
-                          {formatDate(leave.fromDate)}
-                        </div>
-
-                        <div className="table-secondary-text">
-                          to {formatDate(leave.toDate)}
-                        </div>
-                      </td>
-
-                      <td>
-                        <strong>
-                          {leave.numberOfDays || 0}
-                        </strong>
-                      </td>
-
-                      <td>
-                        <div className="leave-reason">
-                          {leave.reason || '—'}
-                        </div>
-                      </td>
-
-                      <td>
-                        <span
-                          className={`status-badge ${getStatusClass(
-                            leave.status
-                          )}`}
-                        >
-                          {leave.status}
-                        </span>
-                      </td>
-
-                      <td>
-                        {leave.reviewedBy ? (
-                          <>
                             <div className="table-primary-text">
-                              {reviewer.name || 'Admin'}
+                              {employee.fullName ||
+                                'Unknown Employee'}
                             </div>
 
                             <div className="table-secondary-text">
-                              {formatDate(leave.reviewDate)}
+                              {employee.employeeId ||
+                                '—'}
                             </div>
-                          </>
-                        ) : (
-                          <span className="table-secondary-text">
-                            Pending review
-                          </span>
+
+                          </td>
                         )}
-                      </td>
 
-                      <td>
+                        <td>
+                          {leave.leaveType}
+                        </td>
 
-                        <div className="table-actions">
+                        <td>
 
-                          <button
-                            type="button"
-                            className="btn-table-action"
-                            title="Edit leave"
-                            onClick={() => handleEdit(leave)}
+                          <div className="table-primary-text">
+                            {formatDate(
+                              leave.fromDate
+                            )}
+                          </div>
+
+                          <div className="table-secondary-text">
+                            to{' '}
+                            {formatDate(
+                              leave.toDate
+                            )}
+                          </div>
+
+                        </td>
+
+                        <td>
+                          <strong>
+                            {leave.numberOfDays ||
+                              0}
+                          </strong>
+                        </td>
+
+                        <td>
+
+                          <div className="leave-reason">
+                            {leave.reason ||
+                              '—'}
+                          </div>
+
+                        </td>
+
+                        <td>
+
+                          <span
+                            className={`status-badge ${getStatusClass(
+                              leave.status
+                            )}`}
                           >
-                            <i className="bi bi-pencil"></i>
-                          </button>
+                            {leave.status}
+                          </span>
 
-                          <button
-                            type="button"
-                            className="btn-table-action btn-table-danger"
-                            title="Delete leave"
-                            onClick={() =>
-                              handleDelete(leave._id)
-                            }
-                          >
-                            <i className="bi bi-trash"></i>
-                          </button>
+                        </td>
 
-                        </div>
+                        <td>
 
-                      </td>
+                          {leave.reviewedBy ? (
+                            <>
 
-                    </tr>
-                  );
-                })}
+                              <div className="table-primary-text">
+                                {reviewer.name ||
+                                  'Admin'}
+                              </div>
+
+                              <div className="table-secondary-text">
+                                {formatDate(
+                                  leave.reviewDate
+                                )}
+                              </div>
+
+                            </>
+                          ) : (
+
+                            <span className="table-secondary-text">
+                              Pending review
+                            </span>
+
+                          )}
+
+                        </td>
+
+                        {/* ADMIN ONLY */}
+                        {isAdmin && (
+                          <td>
+
+                            <div className="table-actions">
+
+                              <button
+                                type="button"
+                                className="btn-table-action"
+                                title="Edit leave"
+                                onClick={() =>
+                                  handleEdit(
+                                    leave
+                                  )
+                                }
+                              >
+                                <i className="bi bi-pencil"></i>
+                              </button>
+
+                              <button
+                                type="button"
+                                className="btn-table-action btn-table-danger"
+                                title="Delete leave"
+                                onClick={() =>
+                                  handleDelete(
+                                    leave._id
+                                  )
+                                }
+                              >
+                                <i className="bi bi-trash"></i>
+                              </button>
+
+                            </div>
+
+                          </td>
+                        )}
+
+                      </tr>
+                    );
+                  }
+                )}
 
               </tbody>
 
@@ -738,3 +1049,4 @@ function Leave() {
 }
 
 export default Leave;
+

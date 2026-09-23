@@ -1,7 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import api from '../api/axios';
+import { AuthContext } from '../context/AuthContext';
 
 const Billing = () => {
+  const { user } = useContext(AuthContext);
+
+  const isAdmin = user?.role === 'admin';
+  const isAccountant = user?.role === 'accountant';
+
   const [invoices, setInvoices] = useState([]);
   const [clients, setClients] = useState([]);
   const [cases, setCases] = useState([]);
@@ -25,11 +31,14 @@ const Billing = () => {
 
   const fetchData = async () => {
     try {
-      const [invoiceRes, clientRes, caseRes] = await Promise.all([
+      const requests = [
         api.get('/invoices'),
         api.get('/clients'),
         api.get('/cases')
-      ]);
+      ];
+
+      const [invoiceRes, clientRes, caseRes] =
+        await Promise.all(requests);
 
       setInvoices(invoiceRes.data);
       setClients(clientRes.data);
@@ -42,8 +51,10 @@ const Billing = () => {
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (isAdmin || isAccountant) {
+      fetchData();
+    }
+  }, [isAdmin, isAccountant]);
 
   const handleChange = (e) => {
     setFormData({
@@ -75,7 +86,10 @@ const Billing = () => {
 
     try {
       if (editingInvoice) {
-        await api.put(`/invoices/${editingInvoice._id}`, formData);
+        await api.put(
+          `/invoices/${editingInvoice._id}`,
+          formData
+        );
       } else {
         await api.post('/invoices', formData);
       }
@@ -149,7 +163,8 @@ const Billing = () => {
   };
 
   const totalInvoiced = invoices.reduce(
-    (sum, invoice) => sum + Number(invoice.totalAmount || 0),
+    (sum, invoice) =>
+      sum + Number(invoice.totalAmount || 0),
     0
   );
 
@@ -168,17 +183,20 @@ const Billing = () => {
   );
 
   const issuedAmount = issuedInvoices.reduce(
-    (sum, invoice) => sum + Number(invoice.totalAmount || 0),
+    (sum, invoice) =>
+      sum + Number(invoice.totalAmount || 0),
     0
   );
 
   const paidAmount = paidInvoices.reduce(
-    (sum, invoice) => sum + Number(invoice.totalAmount || 0),
+    (sum, invoice) =>
+      sum + Number(invoice.totalAmount || 0),
     0
   );
 
   const overdueAmount = overdueInvoices.reduce(
-    (sum, invoice) => sum + Number(invoice.totalAmount || 0),
+    (sum, invoice) =>
+      sum + Number(invoice.totalAmount || 0),
     0
   );
 
@@ -187,7 +205,9 @@ const Billing = () => {
 
       <div className="page-header">
         <div>
-          <div className="eyebrow">FINANCE & CLIENT ACCOUNTS</div>
+          <div className="eyebrow">
+            FINANCE & CLIENT ACCOUNTS
+          </div>
 
           <h1>Billing</h1>
 
@@ -197,43 +217,57 @@ const Billing = () => {
           </p>
         </div>
 
-        <button
-          className="btn btn-primary"
-          onClick={() => {
-            setEditingInvoice(null);
-            setShowForm(true);
-          }}
-        >
-          <i className="bi bi-plus-lg me-2"></i>
-          New Invoice
-        </button>
+        {(isAdmin || isAccountant) && (
+          <button
+            className="btn btn-primary"
+            onClick={() => {
+              setEditingInvoice(null);
+              setShowForm(true);
+            }}
+          >
+            <i className="bi bi-plus-lg me-2"></i>
+            New Invoice
+          </button>
+        )}
       </div>
 
       <div className="summary-grid">
 
         <div className="summary-card">
-          <div className="summary-label">Total Invoiced</div>
+          <div className="summary-label">
+            Total Invoiced
+          </div>
+
           <div className="summary-value">
             ₹{formatAmount(totalInvoiced)}
           </div>
         </div>
 
         <div className="summary-card">
-          <div className="summary-label">Issued</div>
+          <div className="summary-label">
+            Issued
+          </div>
+
           <div className="summary-value">
             ₹{formatAmount(issuedAmount)}
           </div>
         </div>
 
         <div className="summary-card">
-          <div className="summary-label">Paid</div>
+          <div className="summary-label">
+            Paid
+          </div>
+
           <div className="summary-value">
             ₹{formatAmount(paidAmount)}
           </div>
         </div>
 
         <div className="summary-card">
-          <div className="summary-label">Overdue</div>
+          <div className="summary-label">
+            Overdue
+          </div>
+
           <div className="summary-value">
             ₹{formatAmount(overdueAmount)}
           </div>
@@ -241,7 +275,7 @@ const Billing = () => {
 
       </div>
 
-      {showForm && (
+      {showForm && (isAdmin || isAccountant) && (
         <div className="card lawyer-form-card">
 
           <div className="card-header">
@@ -288,7 +322,9 @@ const Billing = () => {
                   onChange={handleChange}
                   required
                 >
-                  <option value="">Select Client</option>
+                  <option value="">
+                    Select Client
+                  </option>
 
                   {clients.map((client) => (
                     <option
@@ -312,7 +348,9 @@ const Billing = () => {
                   value={formData.caseId}
                   onChange={handleChange}
                 >
-                  <option value="">No Case / Optional</option>
+                  <option value="">
+                    No Case / Optional
+                  </option>
 
                   {cases.map((legalCase) => (
                     <option
@@ -487,13 +525,19 @@ const Billing = () => {
         {loading ? (
           <div className="empty-state">
             <i className="bi bi-hourglass-split"></i>
+
             <h3>Loading invoices</h3>
-            <p>Please wait while billing records are retrieved.</p>
+
+            <p>
+              Please wait while billing records are retrieved.
+            </p>
           </div>
         ) : invoices.length === 0 ? (
           <div className="empty-state">
             <i className="bi bi-receipt"></i>
+
             <h3>No invoices found</h3>
+
             <p>
               Create the first client invoice to begin tracking billing.
             </p>
@@ -512,7 +556,10 @@ const Billing = () => {
                   <th>Due Date</th>
                   <th>Total</th>
                   <th>Status</th>
-                  <th>Actions</th>
+
+                  {(isAdmin || isAccountant) && (
+                    <th>Actions</th>
+                  )}
                 </tr>
               </thead>
 
@@ -596,27 +643,33 @@ const Billing = () => {
                         </span>
                       </td>
 
-                      <td>
-                        <div className="table-actions">
+                      {(isAdmin || isAccountant) && (
+                        <td>
+                          <div className="table-actions">
 
-                          <button
-                            className="btn btn-outline-secondary"
-                            title="Edit invoice"
-                            onClick={() => handleEdit(invoice)}
-                          >
-                            <i className="bi bi-pencil"></i>
-                          </button>
+                            <button
+                              className="btn btn-outline-secondary"
+                              title="Edit invoice"
+                              onClick={() => handleEdit(invoice)}
+                            >
+                              <i className="bi bi-pencil"></i>
+                            </button>
 
-                          <button
-                            className="btn btn-outline-danger"
-                            title="Delete invoice"
-                            onClick={() => handleDelete(invoice._id)}
-                          >
-                            <i className="bi bi-trash"></i>
-                          </button>
+                            {isAdmin && (
+                              <button
+                                className="btn btn-outline-danger"
+                                title="Delete invoice"
+                                onClick={() =>
+                                  handleDelete(invoice._id)
+                                }
+                              >
+                                <i className="bi bi-trash"></i>
+                              </button>
+                            )}
 
-                        </div>
-                      </td>
+                          </div>
+                        </td>
+                      )}
 
                     </tr>
                   );

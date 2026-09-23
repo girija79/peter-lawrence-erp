@@ -1,24 +1,52 @@
 const Document = require('../models/Document');
 const Client = require('../models/Client');
 const Case = require('../models/Case');
+const Lawyer = require('../models/Lawyer');
 
 // Get all documents
 const getDocuments = async (req, res) => {
   try {
-    const documents = await Document.find()
+    let query = {};
+
+    if (req.user.role === 'lawyer') {
+      const lawyer = await Lawyer.findOne({
+        userId: req.user._id
+      });
+
+      if (!lawyer) {
+        return res.status(404).json({
+          message: 'Lawyer profile not found'
+        });
+      }
+
+      const assignedCases = await Case.find({
+        lawyerId: lawyer._id
+      }).select('_id');
+
+      const caseIds = assignedCases.map(
+        (legalCase) => legalCase._id
+      );
+
+      query.caseId = { $in: caseIds };
+    }
+
+    const documents = await Document.find(query)
       .populate('clientId', 'fullName email phone')
       .populate('caseId', 'caseNumber title')
       .sort({ createdAt: -1 });
 
     res.json(documents);
+
   } catch (error) {
+    console.error('DOCUMENT ERROR:', error);
+
     res.status(500).json({
       message: 'Failed to fetch documents',
-      error: error.message
+      error: error.message,
+      stack: error.stack
     });
   }
 };
-
 // Get document by ID
 const getDocumentById = async (req, res) => {
   try {

@@ -13,30 +13,37 @@ const { authorize } = require('../middleware/roleCheck');
 
 const router = express.Router();
 
-// Admin-only client payment management
-router.get('/', protect, authorize('admin'), getClientPayments);
+// Admin + Accountant can view client payments
+router.get(
+  '/',
+  protect,
+  authorize('admin', 'accountant'),
+  getClientPayments
+);
 
 router.get(
   '/:id',
   protect,
-  authorize('admin'),
+  authorize('admin', 'accountant'),
   getClientPaymentById
 );
 
+// Admin + Accountant can create/update payments
 router.post(
   '/',
   protect,
-  authorize('admin'),
+  authorize('admin', 'accountant'),
   createClientPayment
 );
 
 router.put(
   '/:id',
   protect,
-  authorize('admin'),
+  authorize('admin', 'accountant'),
   updateClientPayment
 );
 
+// Delete remains Admin-only
 router.delete(
   '/:id',
   protect,

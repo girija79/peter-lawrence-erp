@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+
+import { useContext, useEffect, useMemo, useState } from 'react';
 import api from '../api/axios';
+import { AuthContext } from '../context/AuthContext';
 
 const initialForm = {
   transactionNumber: '',
@@ -32,6 +34,11 @@ const statuses = [
 ];
 
 function PettyCash() {
+  const { user } = useContext(AuthContext);
+
+  const isAdmin = user?.role === 'admin';
+  const isAccountant = user?.role === 'accountant';
+
   const [transactions, setTransactions] = useState([]);
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState(null);
@@ -431,243 +438,23 @@ function PettyCash() {
       </div>
 
       {/* TRANSACTION FORM */}
-      <section className="editorial-section">
+      {(isAdmin || isAccountant) && (
+        <section className="editorial-section">
 
-        <div className="section-heading">
-          <div>
-            <span className="section-kicker">
-              {editingId
-                ? 'UPDATE TRANSACTION'
-                : 'NEW TRANSACTION'}
-            </span>
+          <div className="section-heading">
+            <div>
+              <span className="section-kicker">
+                {editingId
+                  ? 'UPDATE TRANSACTION'
+                  : 'NEW TRANSACTION'}
+              </span>
 
-            <h2>
-              {editingId
-                ? 'Edit Petty Cash Transaction'
-                : 'Record Petty Cash Transaction'}
-            </h2>
-          </div>
-
-          {editingId && (
-            <button
-              type="button"
-              className="btn-editorial-secondary"
-              onClick={resetForm}
-            >
-              <i className="bi bi-x-lg"></i>
-              Cancel Edit
-            </button>
-          )}
-        </div>
-
-        <form onSubmit={handleSubmit}>
-
-          <div className="form-grid">
-
-            <div className="form-field">
-              <label>
-                Transaction Number <span>*</span>
-              </label>
-
-              <input
-                type="text"
-                name="transactionNumber"
-                value={form.transactionNumber}
-                onChange={handleChange}
-                placeholder="PC-2026-001"
-                required
-              />
+              <h2>
+                {editingId
+                  ? 'Edit Petty Cash Transaction'
+                  : 'Record Petty Cash Transaction'}
+              </h2>
             </div>
-
-            <div className="form-field">
-              <label>
-                Transaction Date <span>*</span>
-              </label>
-
-              <input
-                type="date"
-                name="transactionDate"
-                value={form.transactionDate}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div className="form-field">
-              <label>
-                Transaction Type <span>*</span>
-              </label>
-
-              <select
-                name="transactionType"
-                value={form.transactionType}
-                onChange={handleChange}
-              >
-                <option value="Cash Out">
-                  Cash Out
-                </option>
-
-                <option value="Cash In">
-                  Cash In
-                </option>
-              </select>
-            </div>
-
-            <div className="form-field">
-              <label>
-                Category
-              </label>
-
-              <select
-                name="category"
-                value={form.category}
-                onChange={handleChange}
-              >
-                {categories.map((category) => (
-                  <option
-                    key={category}
-                    value={category}
-                  >
-                    {category}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-field">
-              <label>
-                Amount <span>*</span>
-              </label>
-
-              <input
-                type="number"
-                name="amount"
-                value={form.amount}
-                onChange={handleChange}
-                min="0"
-                step="0.01"
-                placeholder="0.00"
-                required
-              />
-            </div>
-
-            <div className="form-field">
-              <label>
-                Paid To / Received From <span>*</span>
-              </label>
-
-              <input
-                type="text"
-                name="partyName"
-                value={form.partyName}
-                onChange={handleChange}
-                placeholder="Enter person or organization"
-                required
-              />
-            </div>
-
-            <div className="form-field">
-              <label>
-                Payment Method
-              </label>
-
-              <select
-                name="paymentMethod"
-                value={form.paymentMethod}
-                onChange={handleChange}
-              >
-                <option value="Cash">
-                  Cash
-                </option>
-
-                <option value="Bank Transfer">
-                  Bank Transfer
-                </option>
-
-                <option value="Cheque">
-                  Cheque
-                </option>
-
-                <option value="Other">
-                  Other
-                </option>
-              </select>
-            </div>
-
-            <div className="form-field">
-              <label>
-                Status
-              </label>
-
-              <select
-                name="status"
-                value={form.status}
-                onChange={handleChange}
-              >
-                {statuses.map((status) => (
-                  <option
-                    key={status}
-                    value={status}
-                  >
-                    {status}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-field form-field-full">
-              <label>
-                Description <span>*</span>
-              </label>
-
-              <textarea
-                name="description"
-                value={form.description}
-                onChange={handleChange}
-                rows="3"
-                placeholder="Describe the petty cash transaction..."
-                required
-              />
-            </div>
-
-            <div className="form-field form-field-full">
-              <label>
-                Notes
-              </label>
-
-              <textarea
-                name="notes"
-                value={form.notes}
-                onChange={handleChange}
-                rows="2"
-                placeholder="Optional administrative notes..."
-              />
-            </div>
-
-          </div>
-
-          <div className="form-actions">
-
-            <button
-              type="submit"
-              className="btn-editorial-primary"
-              disabled={saving}
-            >
-              {saving ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-2"></span>
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <i className="bi bi-check2"></i>
-
-                  {editingId
-                    ? 'Update Transaction'
-                    : 'Record Transaction'}
-                </>
-              )}
-            </button>
 
             {editingId && (
               <button
@@ -675,14 +462,236 @@ function PettyCash() {
                 className="btn-editorial-secondary"
                 onClick={resetForm}
               >
-                Clear
+                <i className="bi bi-x-lg"></i>
+                Cancel Edit
               </button>
             )}
-
           </div>
 
-        </form>
-      </section>
+          <form onSubmit={handleSubmit}>
+
+            <div className="form-grid">
+
+              <div className="form-field">
+                <label>
+                  Transaction Number <span>*</span>
+                </label>
+
+                <input
+                  type="text"
+                  name="transactionNumber"
+                  value={form.transactionNumber}
+                  onChange={handleChange}
+                  placeholder="PC-2026-001"
+                  required
+                />
+              </div>
+
+              <div className="form-field">
+                <label>
+                  Transaction Date <span>*</span>
+                </label>
+
+                <input
+                  type="date"
+                  name="transactionDate"
+                  value={form.transactionDate}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <div className="form-field">
+                <label>
+                  Transaction Type <span>*</span>
+                </label>
+
+                <select
+                  name="transactionType"
+                  value={form.transactionType}
+                  onChange={handleChange}
+                >
+                  <option value="Cash Out">
+                    Cash Out
+                  </option>
+
+                  <option value="Cash In">
+                    Cash In
+                  </option>
+                </select>
+              </div>
+
+              <div className="form-field">
+                <label>
+                  Category
+                </label>
+
+                <select
+                  name="category"
+                  value={form.category}
+                  onChange={handleChange}
+                >
+                  {categories.map((category) => (
+                    <option
+                      key={category}
+                      value={category}
+                    >
+                      {category}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-field">
+                <label>
+                  Amount <span>*</span>
+                </label>
+
+                <input
+                  type="number"
+                  name="amount"
+                  value={form.amount}
+                  onChange={handleChange}
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  required
+                />
+              </div>
+
+              <div className="form-field">
+                <label>
+                  Paid To / Received From <span>*</span>
+                </label>
+
+                <input
+                  type="text"
+                  name="partyName"
+                  value={form.partyName}
+                  onChange={handleChange}
+                  placeholder="Enter person or organization"
+                  required
+                />
+              </div>
+
+              <div className="form-field">
+                <label>
+                  Payment Method
+                </label>
+
+                <select
+                  name="paymentMethod"
+                  value={form.paymentMethod}
+                  onChange={handleChange}
+                >
+                  <option value="Cash">
+                    Cash
+                  </option>
+
+                  <option value="Bank Transfer">
+                    Bank Transfer
+                  </option>
+
+                  <option value="Cheque">
+                    Cheque
+                  </option>
+
+                  <option value="Other">
+                    Other
+                  </option>
+                </select>
+              </div>
+
+              <div className="form-field">
+                <label>
+                  Status
+                </label>
+
+                <select
+                  name="status"
+                  value={form.status}
+                  onChange={handleChange}
+                >
+                  {statuses.map((status) => (
+                    <option
+                      key={status}
+                      value={status}
+                    >
+                      {status}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-field form-field-full">
+                <label>
+                  Description <span>*</span>
+                </label>
+
+                <textarea
+                  name="description"
+                  value={form.description}
+                  onChange={handleChange}
+                  rows="3"
+                  placeholder="Describe the petty cash transaction..."
+                  required
+                />
+              </div>
+
+              <div className="form-field form-field-full">
+                <label>
+                  Notes
+                </label>
+
+                <textarea
+                  name="notes"
+                  value={form.notes}
+                  onChange={handleChange}
+                  rows="2"
+                  placeholder="Optional administrative notes..."
+                />
+              </div>
+
+            </div>
+
+            <div className="form-actions">
+
+              <button
+                type="submit"
+                className="btn-editorial-primary"
+                disabled={saving}
+              >
+                {saving ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2"></span>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <i className="bi bi-check2"></i>
+
+                    {editingId
+                      ? 'Update Transaction'
+                      : 'Record Transaction'}
+                  </>
+                )}
+              </button>
+
+              {editingId && (
+                <button
+                  type="button"
+                  className="btn-editorial-secondary"
+                  onClick={resetForm}
+                >
+                  Clear
+                </button>
+              )}
+
+            </div>
+
+          </form>
+        </section>
+      )}
 
       {/* TRANSACTION REGISTER */}
       <section className="editorial-section">
@@ -892,29 +901,33 @@ function PettyCash() {
 
                         <div className="table-actions">
 
-                          <button
-                            type="button"
-                            className="btn-table-action"
-                            title="Edit transaction"
-                            onClick={() =>
-                              handleEdit(transaction)
-                            }
-                          >
-                            <i className="bi bi-pencil"></i>
-                          </button>
+                          {(isAdmin || isAccountant) && (
+                            <button
+                              type="button"
+                              className="btn-table-action"
+                              title="Edit transaction"
+                              onClick={() =>
+                                handleEdit(transaction)
+                              }
+                            >
+                              <i className="bi bi-pencil"></i>
+                            </button>
+                          )}
 
-                          <button
-                            type="button"
-                            className="btn-table-action btn-table-danger"
-                            title="Delete transaction"
-                            onClick={() =>
-                              handleDelete(
-                                transaction._id
-                              )
-                            }
-                          >
-                            <i className="bi bi-trash"></i>
-                          </button>
+                          {isAdmin && (
+                            <button
+                              type="button"
+                              className="btn-table-action btn-table-danger"
+                              title="Delete transaction"
+                              onClick={() =>
+                                handleDelete(
+                                  transaction._id
+                                )
+                              }
+                            >
+                              <i className="bi bi-trash"></i>
+                            </button>
+                          )}
 
                         </div>
 

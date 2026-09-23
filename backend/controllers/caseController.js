@@ -1,11 +1,30 @@
+const User = require('../models/User');
 const Case = require('../models/Case');
 const Client = require('../models/Client');
 const Lawyer = require('../models/Lawyer');
 
+
 // GET ALL CASES
 const getCases = async (req, res) => {
   try {
-    const cases = await Case.find()
+    let query = {};
+
+    // Lawyers can see only cases assigned to them
+    if (req.user.role === 'lawyer') {
+      const lawyer = await Lawyer.findOne({
+        userId: req.user._id
+      });
+
+      if (!lawyer) {
+        return res.status(404).json({
+          message: 'Lawyer profile not found'
+        });
+      }
+
+      query.lawyerId = lawyer._id;
+    }
+
+    const cases = await Case.find(query)
       .populate('clientId', 'fullName email phone')
       .populate('lawyerId', 'fullName email specialization')
       .sort({ createdAt: -1 });
@@ -13,6 +32,7 @@ const getCases = async (req, res) => {
     res.status(200).json(cases);
   } catch (error) {
     console.error('Get Cases Error:', error);
+
     res.status(500).json({
       message: 'Failed to fetch cases',
       error: error.message
@@ -23,26 +43,45 @@ const getCases = async (req, res) => {
 // GET SINGLE CASE
 const getCaseById = async (req, res) => {
   try {
-    const legalCase = await Case.findById(req.params.id)
+    let query = {
+      _id: req.params.id
+    };
+
+    // Lawyers can open only their assigned cases
+    if (req.user.role === 'lawyer') {
+      const lawyer = await Lawyer.findOne({
+        userId: req.user._id
+      });
+
+      if (!lawyer) {
+        return res.status(404).json({
+          message: 'Lawyer profile not found'
+        });
+      }
+
+      query.lawyerId = lawyer._id;
+    }
+
+    const legalCase = await Case.findOne(query)
       .populate('clientId', 'fullName email phone')
       .populate('lawyerId', 'fullName email specialization');
 
     if (!legalCase) {
       return res.status(404).json({
-        message: 'Case not found'
+        message: 'Case not found or access denied'
       });
     }
 
     res.status(200).json(legalCase);
   } catch (error) {
     console.error('Get Case Error:', error);
+
     res.status(500).json({
       message: 'Failed to fetch case',
       error: error.message
     });
   }
 };
-
 // CREATE CASE
 const createCase = async (req, res) => {
   try {

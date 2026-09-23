@@ -3,6 +3,7 @@ const express = require('express');
 const {
   getEmployees,
   getEmployeeById,
+  getMyEmployeeProfile,
   createEmployee,
   updateEmployee,
   deleteEmployee
@@ -12,6 +13,13 @@ const { protect } = require('../middleware/auth');
 const { authorize } = require('../middleware/roleCheck');
 
 const router = express.Router();
+
+router.get(
+  '/me',
+  protect,
+  authorize('employee'),
+  getMyEmployeeProfile
+);
 
 // Admin only
 router.get(

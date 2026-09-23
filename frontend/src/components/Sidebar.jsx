@@ -61,6 +61,11 @@ function Sidebar({ user }) {
           icon: "bi-person-workspace",
           path: "/hr",
         },
+        {
+          name: "Leave",
+          icon: "bi-calendar-minus",
+          path: "/leave",
+        },
       ],
     },
     {
@@ -134,6 +139,50 @@ function Sidebar({ user }) {
     },
   ];
 
+  // Accountant Menu
+  const accountantMenu = [
+    {
+      section: "FINANCE WORKSPACE",
+      items: [
+        {
+          name: "Overview",
+          icon: "bi-grid-1x2",
+          path: "/dashboard",
+        },
+        {
+          name: "Billing",
+          icon: "bi-receipt",
+          path: "/billing",
+        },
+        {
+          name: "Client Payments",
+          icon: "bi-cash-stack",
+          path: "/client-payments",
+        },
+        {
+          name: "Vendors",
+          icon: "bi-building",
+          path: "/vendors",
+        },
+        {
+          name: "Petty Cash",
+          icon: "bi-wallet2",
+          path: "/petty-cash",
+        },
+        {
+          name: "Payroll",
+          icon: "bi-credit-card",
+          path: "/payroll",
+        },
+        {
+          name: "Reports",
+          icon: "bi-bar-chart",
+          path: "/reports",
+        },
+      ],
+    },
+  ];
+
   // Employee Menu
   const employeeMenu = [
     {
@@ -158,6 +207,11 @@ function Sidebar({ user }) {
           name: "Leave",
           icon: "bi-calendar-minus",
           path: "/leave",
+        },
+        {
+          name: "Payroll",
+          icon: "bi-credit-card",
+          path: "/payroll",
         },
       ],
     },
@@ -209,6 +263,8 @@ function Sidebar({ user }) {
     menuSections = adminMenu;
   } else if (user?.role === "lawyer") {
     menuSections = lawyerMenu;
+  } else if (user?.role === "accountant") {
+    menuSections = accountantMenu;
   } else if (user?.role === "employee") {
     menuSections = employeeMenu;
   } else if (user?.role === "client") {
