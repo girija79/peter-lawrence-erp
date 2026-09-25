@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 
 const notificationSchema = new mongoose.Schema(
   {
+    // Every notification belongs to ONE specific user.
+    // This is the main security boundary.
     recipient: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -30,7 +32,11 @@ const notificationSchema = new mongoose.Schema(
         'Payment',
         'Invoice',
         'Leave',
+        'Attendance',
+        'Payroll',
+        'Performance',
         'HR',
+        'Communication',
         'System',
         'Other'
       ],
@@ -70,21 +76,20 @@ const notificationSchema = new mongoose.Schema(
   }
 );
 
-
-// Important for notification polling:
-// quickly find unread notifications for a particular user.
+// Fast unread notification lookup
 notificationSchema.index({
   recipient: 1,
   isRead: 1,
   createdAt: -1
 });
 
-
-// Quickly retrieve latest notifications for a user.
+// Fast latest notification lookup
 notificationSchema.index({
   recipient: 1,
   createdAt: -1
 });
 
-
-module.exports = mongoose.model('Notification', notificationSchema);
+module.exports = mongoose.model(
+  'Notification',
+  notificationSchema
+);

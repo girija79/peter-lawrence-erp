@@ -2,6 +2,7 @@ const Leave = require("../models/Leave");
 const Employee = require("../models/Employee");
 const User = require("../models/User");
 const Notification = require("../models/Notification");
+const LeaveBalance = require("../models/LeaveBalance");
 
 // Calculate number of days between two dates
 const calculateDays = (fromDate, toDate) => {
@@ -166,28 +167,27 @@ const createMyLeave = async (req, res) => {
 
     const populatedLeave = await leave.populate(
       "employeeId",
-      "employeeId fullName department designation",
+      "employeeId fullName department designation"
     );
 
-    // Notify all admins about the new leave request
-    const admins = await User.find({
-      role: "admin",
+    // Notify both Admin and HR about the new leave request
+    const reviewers = await User.find({
+      role: { $in: ["admin", "hr"] },
     });
 
     await Promise.all(
-      admins.map((admin) =>
+      reviewers.map((reviewer) =>
         Notification.create({
-          recipient: admin._id,
+          recipient: reviewer._id,
           title: "New Leave Request",
           message: `${employee.fullName} has submitted a ${leave.leaveType} request for ${numberOfDays} day(s).`,
           type: "Leave",
           priority: "High",
           relatedId: leave._id,
           relatedModel: "Leave",
-        }),
-      ),
+        })
+      )
     );
-
 
     res.status(201).json(populatedLeave);
   } catch (error) {
@@ -209,6 +209,13 @@ const updateLeave = async (req, res) => {
       });
     }
 
+    // Store the previous state before making changes
+    const previousStatus = leave.status;
+    const previousLeaveType = leave.leaveType;
+    const previousNumberOfDays = leave.numberOfDays;
+    const previousEmployeeId = leave.employeeId;
+    const previousYear = new Date(leave.fromDate).getFullYear();
+
     const {
       employeeId,
       leaveType,
@@ -221,6 +228,7 @@ const updateLeave = async (req, res) => {
       remarks,
     } = req.body;
 
+    // Update employee
     if (employeeId) {
       const employee = await Employee.findById(employeeId);
 
@@ -233,18 +241,22 @@ const updateLeave = async (req, res) => {
       leave.employeeId = employeeId;
     }
 
+    // Update leave type
     if (leaveType !== undefined) {
       leave.leaveType = leaveType;
     }
 
+    // Update reason
     if (reason !== undefined) {
       leave.reason = reason;
     }
 
+    // Update remarks
     if (remarks !== undefined) {
       leave.remarks = remarks;
     }
 
+    // Update dates
     if (fromDate || toDate) {
       const newFromDate = fromDate ? new Date(fromDate) : leave.fromDate;
 
@@ -265,6 +277,7 @@ const updateLeave = async (req, res) => {
       leave.numberOfDays = calculateDays(newFromDate, newToDate);
     }
 
+    // Update status
     if (status !== undefined) {
       leave.status = status;
 
@@ -273,7 +286,7 @@ const updateLeave = async (req, res) => {
 
         leave.reviewDate = reviewDate ? new Date(reviewDate) : new Date();
 
-        // Notify the employee about the decision
+        // Notify employee about the decision
         const employee = await Employee.findById(leave.employeeId);
 
         if (employee?.userId) {
@@ -305,6 +318,119 @@ const updateLeave = async (req, res) => {
         }
       }
     }
+
+    // --------------------------------------------------
+    // LEAVE BALANCE INTEGRATION
+    // --------------------------------------------------
+
+    // Helper function to update the correct leave type
+    const updateUsedBalance = (balance, type, days) => {
+      if (type === "Casual Leave") {
+        balance.casualLeaveUsed += days;
+      }
+
+      if (type === "Sick Leave") {
+        balance.sickLeaveUsed += days;
+      }
+
+      if (type === "Annual Leave") {
+        balance.annualLeaveUsed += days;
+      }
+
+      if (type === "Emergency Leave") {
+        balance.emergencyLeaveUsed += days;
+      }
+    };
+
+    // --------------------------------------------------
+    // CASE 1:
+    // Previously approved leave needs to be removed
+    // from the balance because it is no longer approved.
+    // --------------------------------------------------
+
+    const wasApproved = previousStatus === "Approved";
+
+    const isStillApproved = leave.status === "Approved";
+
+    const leaveDetailsChanged =
+      previousLeaveType !== leave.leaveType ||
+      previousNumberOfDays !== leave.numberOfDays ||
+      previousEmployeeId.toString() !== leave.employeeId.toString() ||
+      previousYear !== new Date(leave.fromDate).getFullYear();
+
+    if (wasApproved && (!isStillApproved || leaveDetailsChanged)) {
+      const previousBalance = await LeaveBalance.findOne({
+        employeeId: previousEmployeeId,
+        year: previousYear,
+      });
+
+      if (previousBalance) {
+        updateUsedBalance(
+          previousBalance,
+          previousLeaveType,
+          -previousNumberOfDays,
+        );
+
+        // Prevent negative values
+        previousBalance.casualLeaveUsed = Math.max(
+          previousBalance.casualLeaveUsed,
+          0,
+        );
+
+        previousBalance.sickLeaveUsed = Math.max(
+          previousBalance.sickLeaveUsed,
+          0,
+        );
+
+        previousBalance.annualLeaveUsed = Math.max(
+          previousBalance.annualLeaveUsed,
+          0,
+        );
+
+        previousBalance.emergencyLeaveUsed = Math.max(
+          previousBalance.emergencyLeaveUsed,
+          0,
+        );
+
+        await previousBalance.save();
+      }
+    }
+
+    // --------------------------------------------------
+    // CASE 2:
+    // Current leave is approved.
+    // Add it to the correct leave balance.
+    // --------------------------------------------------
+
+    if (isStillApproved) {
+      const currentEmployeeId = leave.employeeId;
+
+      const currentYear = new Date(leave.fromDate).getFullYear();
+
+      let leaveBalance = await LeaveBalance.findOne({
+        employeeId: currentEmployeeId,
+        year: currentYear,
+      });
+
+      // Automatically create default balance
+      // if it doesn't exist.
+      if (!leaveBalance) {
+        leaveBalance = await LeaveBalance.create({
+          employeeId: currentEmployeeId,
+          year: currentYear,
+        });
+      }
+
+      // Only add the leave if it was not already
+      // counted, or if its approved details changed.
+      if (!wasApproved || leaveDetailsChanged) {
+        updateUsedBalance(leaveBalance, leave.leaveType, leave.numberOfDays);
+
+        await leaveBalance.save();
+      }
+    }
+
+    // Save leave record
     await leave.save();
 
     const updatedLeave = await leave
@@ -313,6 +439,8 @@ const updateLeave = async (req, res) => {
 
     res.json(updatedLeave);
   } catch (error) {
+    console.error("UPDATE LEAVE ERROR:", error);
+
     res.status(500).json({
       message: "Failed to update leave record",
       error: error.message,
@@ -320,25 +448,68 @@ const updateLeave = async (req, res) => {
   }
 };
 
-// Delete leave record
 const deleteLeave = async (req, res) => {
   try {
     const leave = await Leave.findById(req.params.id);
 
     if (!leave) {
       return res.status(404).json({
-        message: "Leave record not found",
+        message: "Leave not found",
       });
+    }
+
+    // If the leave was approved, restore the employee's leave balance
+    if (leave.status === "Approved") {
+      const year = new Date(leave.fromDate).getFullYear();
+
+      const leaveBalance = await LeaveBalance.findOne({
+        employeeId: leave.employeeId,
+        year,
+      });
+
+      if (leaveBalance) {
+        if (leave.leaveType === "Casual Leave") {
+          leaveBalance.casualLeaveUsed = Math.max(
+            0,
+            leaveBalance.casualLeaveUsed - leave.numberOfDays
+          );
+        }
+
+        if (leave.leaveType === "Sick Leave") {
+          leaveBalance.sickLeaveUsed = Math.max(
+            0,
+            leaveBalance.sickLeaveUsed - leave.numberOfDays
+          );
+        }
+
+        if (leave.leaveType === "Annual Leave") {
+          leaveBalance.annualLeaveUsed = Math.max(
+            0,
+            leaveBalance.annualLeaveUsed - leave.numberOfDays
+          );
+        }
+
+        if (leave.leaveType === "Emergency Leave") {
+          leaveBalance.emergencyLeaveUsed = Math.max(
+            0,
+            leaveBalance.emergencyLeaveUsed - leave.numberOfDays
+          );
+        }
+
+        await leaveBalance.save();
+      }
     }
 
     await leave.deleteOne();
 
     res.json({
-      message: "Leave record deleted successfully",
+      message: "Leave deleted successfully",
     });
   } catch (error) {
+    console.error("DELETE LEAVE ERROR:", error);
+
     res.status(500).json({
-      message: "Failed to delete leave record",
+      message: "Failed to delete leave",
       error: error.message,
     });
   }

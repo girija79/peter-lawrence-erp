@@ -15,6 +15,8 @@ const { authorize } = require('../middleware/roleCheck');
 
 const router = express.Router();
 
+
+// Employee can view own leave requests
 router.get(
   '/me',
   protect,
@@ -22,6 +24,8 @@ router.get(
   getMyLeaves
 );
 
+
+// Employee can submit own leave request
 router.post(
   '/me',
   protect,
@@ -29,40 +33,50 @@ router.post(
   createMyLeave
 );
 
-// Admin only
+
+// Admin + HR can view all leave records
 router.get(
   '/',
   protect,
-  authorize('admin'),
+  authorize('admin', 'hr'),
   getLeaves
 );
 
+
+// Admin + HR can view individual leave record
 router.get(
   '/:id',
   protect,
-  authorize('admin'),
+  authorize('admin', 'hr'),
   getLeaveById
 );
 
+
+// Admin + HR can create leave records
 router.post(
   '/',
   protect,
-  authorize('admin'),
+  authorize('admin', 'hr'),
   createLeave
 );
 
+
+// Admin + HR can update / approve / reject leave
 router.put(
   '/:id',
   protect,
-  authorize('admin'),
+  authorize('admin', 'hr'),
   updateLeave
 );
 
+
+// Only Admin can permanently delete leave records
 router.delete(
   '/:id',
   protect,
   authorize('admin'),
   deleteLeave
 );
+
 
 module.exports = router;

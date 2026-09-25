@@ -83,13 +83,33 @@ const createEmployee = async (req, res) => {
       });
     }
 
-    // If linked to a user, verify user exists
+    // Validate linked user
     if (userId) {
       const user = await User.findById(userId);
 
       if (!user) {
         return res.status(400).json({
           message: 'Selected user not found'
+        });
+      }
+
+      // Only employee-role users can be linked to Employee profiles
+      if (user.role !== 'employee') {
+        return res.status(400).json({
+          message:
+            'Selected user must have the employee role'
+        });
+      }
+
+      // Prevent one user from having multiple employee profiles
+      const existingUserEmployee = await Employee.findOne({
+        userId
+      });
+
+      if (existingUserEmployee) {
+        return res.status(400).json({
+          message:
+            'This user is already linked to an employee profile'
         });
       }
     }
@@ -118,7 +138,8 @@ const createEmployee = async (req, res) => {
   } catch (error) {
     if (error.code === 11000) {
       return res.status(400).json({
-        message: 'Employee ID already exists'
+        message:
+          'Employee ID or linked user already exists'
       });
     }
 
@@ -175,7 +196,11 @@ const updateEmployee = async (req, res) => {
     }
 
     // Validate linked user
-    if (userId !== undefined && userId !== null && userId !== '') {
+    if (
+      userId !== undefined &&
+      userId !== null &&
+      userId !== ''
+    ) {
       const user = await User.findById(userId);
 
       if (!user) {
@@ -184,25 +209,82 @@ const updateEmployee = async (req, res) => {
         });
       }
 
+      // Only employee-role users can be linked
+      if (user.role !== 'employee') {
+        return res.status(400).json({
+          message:
+            'Selected user must have the employee role'
+        });
+      }
+
+      // Prevent linking the same user to another employee
+      const existingUserEmployee = await Employee.findOne({
+        userId,
+        _id: { $ne: employee._id }
+      });
+
+      if (existingUserEmployee) {
+        return res.status(400).json({
+          message:
+            'This user is already linked to another employee profile'
+        });
+      }
+
       employee.userId = userId;
     }
 
+    // Remove linked user
     if (userId === '') {
       employee.userId = null;
     }
 
-    if (fullName !== undefined) employee.fullName = fullName;
-    if (email !== undefined) employee.email = email;
-    if (phone !== undefined) employee.phone = phone;
-    if (department !== undefined) employee.department = department;
-    if (designation !== undefined) employee.designation = designation;
-    if (joiningDate !== undefined) employee.joiningDate = joiningDate;
-    if (employmentType !== undefined) employee.employmentType = employmentType;
-    if (reportingManager !== undefined) employee.reportingManager = reportingManager;
-    if (address !== undefined) employee.address = address;
-    if (salary !== undefined) employee.salary = Number(salary);
-    if (status !== undefined) employee.status = status;
-    if (notes !== undefined) employee.notes = notes;
+    if (fullName !== undefined) {
+      employee.fullName = fullName;
+    }
+
+    if (email !== undefined) {
+      employee.email = email;
+    }
+
+    if (phone !== undefined) {
+      employee.phone = phone;
+    }
+
+    if (department !== undefined) {
+      employee.department = department;
+    }
+
+    if (designation !== undefined) {
+      employee.designation = designation;
+    }
+
+    if (joiningDate !== undefined) {
+      employee.joiningDate = joiningDate;
+    }
+
+    if (employmentType !== undefined) {
+      employee.employmentType = employmentType;
+    }
+
+    if (reportingManager !== undefined) {
+      employee.reportingManager = reportingManager;
+    }
+
+    if (address !== undefined) {
+      employee.address = address;
+    }
+
+    if (salary !== undefined) {
+      employee.salary = Number(salary);
+    }
+
+    if (status !== undefined) {
+      employee.status = status;
+    }
+
+    if (notes !== undefined) {
+      employee.notes = notes;
+    }
 
     await employee.save();
 
@@ -213,7 +295,8 @@ const updateEmployee = async (req, res) => {
   } catch (error) {
     if (error.code === 11000) {
       return res.status(400).json({
-        message: 'Employee ID already exists'
+        message:
+          'Employee ID or linked user already exists'
       });
     }
 
@@ -249,12 +332,17 @@ const deleteEmployee = async (req, res) => {
   }
 };
 
+
 // Get logged-in employee's own profile
 const getMyEmployeeProfile = async (req, res) => {
   try {
     const employee = await Employee.findOne({
       userId: req.user._id
-    }).populate('userId', 'name email role');
+    })
+      .select(
+        'employeeId fullName email phone department designation joiningDate employmentType reportingManager address salary status userId'
+      )
+      .populate('userId', 'name email role');
 
     if (!employee) {
       return res.status(404).json({
@@ -270,6 +358,7 @@ const getMyEmployeeProfile = async (req, res) => {
     });
   }
 };
+
 
 module.exports = {
   getEmployees,

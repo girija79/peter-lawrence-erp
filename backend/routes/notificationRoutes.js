@@ -15,7 +15,11 @@ const { authorize } = require('../middleware/roleCheck');
 const router = express.Router();
 
 
-// Get logged-in user's notifications
+// ============================================================
+// USER NOTIFICATIONS
+// ============================================================
+
+// Logged-in user gets ONLY their notifications
 router.get(
   '/',
   protect,
@@ -23,7 +27,7 @@ router.get(
 );
 
 
-// Get unread notification count
+// Unread count for logged-in user
 router.get(
   '/unread-count',
   protect,
@@ -31,10 +35,14 @@ router.get(
 );
 
 
-// Create notification
-// Currently restricted to Admin.
-// Later, automatic notifications will be generated
-// by appointment, case, payment, HR, etc. events.
+// ============================================================
+// ADMIN NOTIFICATION CREATION
+// ============================================================
+
+// Admin can send:
+// - to one user
+// - to one role
+// - to everyone
 router.post(
   '/',
   protect,
@@ -42,6 +50,10 @@ router.post(
   createNotification
 );
 
+
+// ============================================================
+// USER NOTIFICATION ACTIONS
+// ============================================================
 
 // Mark one notification as read
 router.put(
@@ -51,7 +63,7 @@ router.put(
 );
 
 
-// Mark all notifications as read
+// Mark all logged-in user's notifications as read
 router.put(
   '/read-all',
   protect,
@@ -59,7 +71,7 @@ router.put(
 );
 
 
-// Delete one notification
+// Delete one logged-in user's notification
 router.delete(
   '/:id',
   protect,

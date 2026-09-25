@@ -14,6 +14,8 @@ const { authorize } = require('../middleware/roleCheck');
 
 const router = express.Router();
 
+
+// Employee can view own profile
 router.get(
   '/me',
   protect,
@@ -21,40 +23,50 @@ router.get(
   getMyEmployeeProfile
 );
 
-// Admin only
+
+// Admin + HR can view employees
 router.get(
   '/',
   protect,
-  authorize('admin'),
+  authorize('admin', 'hr'),
   getEmployees
 );
 
+
+// Admin + HR can view employee details
 router.get(
   '/:id',
   protect,
-  authorize('admin'),
+  authorize('admin', 'hr'),
   getEmployeeById
 );
 
+
+// Admin + HR can create employees
 router.post(
   '/',
   protect,
-  authorize('admin'),
+  authorize('admin', 'hr'),
   createEmployee
 );
 
+
+// Admin + HR can update employees
 router.put(
   '/:id',
   protect,
-  authorize('admin'),
+  authorize('admin', 'hr'),
   updateEmployee
 );
 
+
+// Only Admin can delete employees
 router.delete(
   '/:id',
   protect,
   authorize('admin'),
   deleteEmployee
 );
+
 
 module.exports = router;

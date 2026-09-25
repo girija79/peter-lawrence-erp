@@ -38,6 +38,10 @@ const cmsPageRoutes = require("./routes/cmsPageRoutes");
 const cmsServiceRoutes = require("./routes/cmsServiceRoutes");
 const cmsPostRoutes = require("./routes/cmsPostRoutes");
 const cmsInquiryRoutes = require("./routes/cmsInquiryRoutes");
+const employeePaymentRoutes = require('./routes/employeePaymentRoutes');
+const leaveBalanceRoutes = require("./routes/leaveBalanceRoutes");
+const performanceRoutes = require('./routes/performanceRoutes');
+const communicationRoutes = require('./routes/communicationRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -64,6 +68,10 @@ app.use("/api/cms-pages", cmsPageRoutes);
 app.use("/api/cms-services", cmsServiceRoutes);
 app.use("/api/cms-posts", cmsPostRoutes);
 app.use("/api/cms-inquiries", cmsInquiryRoutes);
+app.use('/api/employee-payments', employeePaymentRoutes);
+app.use("/api/leave-balances", leaveBalanceRoutes);
+app.use('/api/performances', performanceRoutes);
+app.use('/api/communications', communicationRoutes);
 
 const testRoutes = require('./routes/testRoutes');
 app.use('/api/test', testRoutes);

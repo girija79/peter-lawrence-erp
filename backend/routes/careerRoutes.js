@@ -13,35 +13,36 @@ const { authorize } = require('../middleware/roleCheck');
 
 const router = express.Router();
 
-// Admin only
+// Admin + HR
 router.get(
   '/',
   protect,
-  authorize('admin'),
+  authorize('admin', 'hr'),
   getCareers
 );
 
 router.get(
   '/:id',
   protect,
-  authorize('admin'),
+  authorize('admin', 'hr'),
   getCareerById
 );
 
 router.post(
   '/',
   protect,
-  authorize('admin'),
+  authorize('admin', 'hr'),
   createCareer
 );
 
 router.put(
   '/:id',
   protect,
-  authorize('admin'),
+  authorize('admin', 'hr'),
   updateCareer
 );
 
+// Admin only
 router.delete(
   '/:id',
   protect,

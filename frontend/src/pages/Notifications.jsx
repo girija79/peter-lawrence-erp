@@ -12,7 +12,6 @@ const Notifications = () => {
       setLoading(true);
       setError('');
 
-      // Cache-busting query so the page always requests fresh data
       const response = await api.get(
         `/notifications?_t=${Date.now()}`
       );
@@ -113,7 +112,8 @@ const Notifications = () => {
 
       setNotifications((current) =>
         current.filter(
-          (notification) => notification._id !== id
+          (notification) =>
+            notification._id !== id
         )
       );
     } catch (err) {
@@ -181,8 +181,20 @@ const Notifications = () => {
       case 'Leave':
         return 'bi-calendar-minus';
 
+      case 'Attendance':
+        return 'bi-calendar-check';
+
+      case 'Payroll':
+        return 'bi-wallet2';
+
+      case 'Performance':
+        return 'bi-clipboard-data';
+
       case 'HR':
-        return 'bi-people';
+        return 'bi-person-workspace';
+
+      case 'Communication':
+        return 'bi-chat-dots';
 
       case 'System':
         return 'bi-gear';
@@ -195,7 +207,7 @@ const Notifications = () => {
   return (
     <div className="notifications-page">
 
-      {/* Page Header */}
+      {/* Header */}
       <div className="page-header">
         <div>
           <div className="page-eyebrow">
@@ -205,8 +217,8 @@ const Notifications = () => {
           <h1>Notifications</h1>
 
           <p>
-            Stay informed about appointments, cases,
-            documents, payments and important system updates.
+            Stay informed about activities and updates
+            relevant to your account.
           </p>
         </div>
 
@@ -230,6 +242,7 @@ const Notifications = () => {
 
       {/* Summary */}
       <div className="notifications-summary">
+
         <div className="notification-summary-item">
           <span className="summary-label">
             TOTAL NOTIFICATIONS
@@ -259,6 +272,7 @@ const Notifications = () => {
             {notifications.length - unreadCount}
           </strong>
         </div>
+
       </div>
 
       {/* Error */}
@@ -268,7 +282,7 @@ const Notifications = () => {
         </div>
       )}
 
-      {/* Notifications Register */}
+      {/* Notification Register */}
       <section className="notifications-section">
 
         <div className="section-heading">
@@ -297,7 +311,9 @@ const Notifications = () => {
 
             <p>Loading notifications...</p>
           </div>
+
         ) : notifications.length === 0 ? (
+
           <div className="notifications-empty">
             <div className="empty-icon">
               <i className="bi bi-bell-slash"></i>
@@ -309,7 +325,9 @@ const Notifications = () => {
               You currently have no notifications.
             </p>
           </div>
+
         ) : (
+
           <div className="notification-list">
 
             {notifications.map((notification) => (
@@ -336,6 +354,7 @@ const Notifications = () => {
 
                     <div>
                       <div className="notification-meta">
+
                         <span>
                           {notification.type}
                         </span>
@@ -347,6 +366,7 @@ const Notifications = () => {
                             notification.createdAt
                           )}
                         </span>
+
                       </div>
 
                       <h3>
@@ -375,7 +395,9 @@ const Notifications = () => {
                         type="button"
                         className="notification-action"
                         onClick={() =>
-                          markAsRead(notification._id)
+                          markAsRead(
+                            notification._id
+                          )
                         }
                         disabled={
                           actionLoading ===
@@ -384,7 +406,8 @@ const Notifications = () => {
                       >
                         <i className="bi bi-check2 me-1"></i>
 
-                        {actionLoading === notification._id
+                        {actionLoading ===
+                        notification._id
                           ? 'Updating...'
                           : 'Mark as Read'}
                       </button>
@@ -399,7 +422,8 @@ const Notifications = () => {
                         )
                       }
                       disabled={
-                        actionLoading === notification._id
+                        actionLoading ===
+                        notification._id
                       }
                     >
                       <i className="bi bi-trash3 me-1"></i>

@@ -1,11 +1,18 @@
 const Notification = require('../models/Notification');
 const User = require('../models/User');
 
-// Get notifications for logged-in user
+
+// ============================================================
+// GET LOGGED-IN USER'S NOTIFICATIONS
+// ============================================================
+
 const getNotifications = async (req, res) => {
   try {
-    // Prevent browser/proxy from returning an old notification list
-    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set(
+      'Cache-Control',
+      'no-store, no-cache, must-revalidate, proxy-revalidate'
+    );
+
     res.set('Pragma', 'no-cache');
     res.set('Expires', '0');
 
@@ -28,10 +35,17 @@ const getNotifications = async (req, res) => {
 };
 
 
-// Get unread notification count
+// ============================================================
+// GET UNREAD COUNT
+// ============================================================
+
 const getUnreadCount = async (req, res) => {
   try {
-    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set(
+      'Cache-Control',
+      'no-store, no-cache, must-revalidate, proxy-revalidate'
+    );
+
     res.set('Pragma', 'no-cache');
     res.set('Expires', '0');
 
@@ -44,7 +58,10 @@ const getUnreadCount = async (req, res) => {
       count
     });
   } catch (error) {
-    console.error('Unread notification count error:', error);
+    console.error(
+      'Unread notification count error:',
+      error
+    );
 
     res.status(500).json({
       message: 'Failed to fetch unread notification count'
@@ -53,11 +70,24 @@ const getUnreadCount = async (req, res) => {
 };
 
 
-// Create notification
+// ============================================================
+// CREATE NOTIFICATION
+//
+// Supports:
+// 1. recipient      -> one specific user
+// 2. recipientRole  -> every user with that role
+// 3. allUsers       -> every user
+//
+// IMPORTANT:
+// Each recipient receives a separate Notification document.
+// ============================================================
+
 const createNotification = async (req, res) => {
   try {
     const {
       recipient,
+      recipientRole,
+      allUsers = false,
       title,
       message,
       type = 'System',
@@ -66,19 +96,19 @@ const createNotification = async (req, res) => {
       relatedModel = ''
     } = req.body;
 
-    if (!recipient || !title || !message) {
+    // ----------------------------------------------------------
+    // Basic validation
+    // ----------------------------------------------------------
+
+    if (!title || !message) {
       return res.status(400).json({
-        message: 'Recipient, title and message are required'
+        message: 'Title and message are required'
       });
     }
 
-    const user = await User.findById(recipient);
-
-    if (!user) {
-      return res.status(404).json({
-        message: 'Recipient user not found'
-      });
-    }
+    // ----------------------------------------------------------
+    // Allowed types
+    // ----------------------------------------------------------
 
     const allowedTypes = [
       'Appointment',
@@ -87,7 +117,11 @@ const createNotification = async (req, res) => {
       'Payment',
       'Invoice',
       'Leave',
+      'Attendance',
+      'Payroll',
+      'Performance',
       'HR',
+      'Communication',
       'System',
       'Other'
     ];
@@ -111,7 +145,81 @@ const createNotification = async (req, res) => {
       });
     }
 
-    const notification = await Notification.create({
+    // ----------------------------------------------------------
+    // Exactly one recipient mode
+    // ----------------------------------------------------------
+
+    const recipientModes =
+      Number(Boolean(recipient)) +
+      Number(Boolean(recipientRole)) +
+      Number(Boolean(allUsers));
+
+    if (recipientModes !== 1) {
+      return res.status(400).json({
+        message:
+          'Choose exactly one recipient: specific user, role, or all users'
+      });
+    }
+
+    // ----------------------------------------------------------
+    // Find recipients
+    // ----------------------------------------------------------
+
+    let recipients = [];
+
+    // Specific user
+    if (recipient) {
+      const user = await User.findById(recipient)
+        .select('_id name email role');
+
+      if (!user) {
+        return res.status(404).json({
+          message: 'Recipient user not found'
+        });
+      }
+
+      recipients = [user];
+    }
+
+    // Specific role
+    if (recipientRole) {
+      const allowedRoles = [
+        'admin',
+        'lawyer',
+        'hr',
+        'accountant',
+        'employee',
+        'client'
+      ];
+
+      if (!allowedRoles.includes(recipientRole)) {
+        return res.status(400).json({
+          message: 'Invalid recipient role'
+        });
+      }
+
+      recipients = await User.find({
+        role: recipientRole
+      }).select('_id name email role');
+    }
+
+    // Everyone
+    if (allUsers) {
+      recipients = await User.find({})
+        .select('_id name email role');
+    }
+
+    if (recipients.length === 0) {
+      return res.status(404).json({
+        message: 'No users found for the selected recipient'
+      });
+    }
+
+    // ----------------------------------------------------------
+    // Create one notification per recipient
+    // ----------------------------------------------------------
+
+    const notificationDocuments = recipients.map((user) => ({
       recipient: user._id,
       title: title.trim(),
       message: message.trim(),
@@ -121,15 +229,17 @@ const createNotification = async (req, res) => {
       relatedModel: relatedModel || '',
       isRead: false,
       readAt: null
+    }));
+
+    const notifications = await Notification.insertMany(
+      notificationDocuments
+    );
+
+    res.status(201).json({
+      message: 'Notification created successfully',
+      recipientCount: notifications.length,
+      notifications
     });
-
-    const populatedNotification = await Notification.findById(
-      notification._id
-    )
-      .populate('recipient', 'name email role')
-      .lean();
-
-    res.status(201).json(populatedNotification);
   } catch (error) {
     console.error('Create notification error:', error);
 
@@ -140,7 +250,10 @@ const createNotification = async (req, res) => {
 };
 
 
-// Mark one notification as read
+// ============================================================
+// MARK ONE NOTIFICATION AS READ
+// ============================================================
+
 const markAsRead = async (req, res) => {
   try {
     const notification = await Notification.findOne({
@@ -161,7 +274,10 @@ const markAsRead = async (req, res) => {
 
     res.status(200).json(notification);
   } catch (error) {
-    console.error('Mark notification as read error:', error);
+    console.error(
+      'Mark notification as read error:',
+      error
+    );
 
     res.status(500).json({
       message: 'Failed to mark notification as read'
@@ -170,7 +286,10 @@ const markAsRead = async (req, res) => {
 };
 
 
-// Mark all notifications as read
+// ============================================================
+// MARK ALL USER NOTIFICATIONS AS READ
+// ============================================================
+
 const markAllAsRead = async (req, res) => {
   try {
     await Notification.updateMany(
@@ -190,7 +309,10 @@ const markAllAsRead = async (req, res) => {
       message: 'All notifications marked as read'
     });
   } catch (error) {
-    console.error('Mark all notifications as read error:', error);
+    console.error(
+      'Mark all notifications as read error:',
+      error
+    );
 
     res.status(500).json({
       message: 'Failed to mark all notifications as read'
@@ -199,13 +321,17 @@ const markAllAsRead = async (req, res) => {
 };
 
 
-// Delete one notification
+// ============================================================
+// DELETE ONE USER'S NOTIFICATION
+// ============================================================
+
 const deleteNotification = async (req, res) => {
   try {
-    const notification = await Notification.findOneAndDelete({
-      _id: req.params.id,
-      recipient: req.user._id
-    });
+    const notification =
+      await Notification.findOneAndDelete({
+        _id: req.params.id,
+        recipient: req.user._id
+      });
 
     if (!notification) {
       return res.status(404).json({
@@ -217,7 +343,10 @@ const deleteNotification = async (req, res) => {
       message: 'Notification deleted successfully'
     });
   } catch (error) {
-    console.error('Delete notification error:', error);
+    console.error(
+      'Delete notification error:',
+      error
+    );
 
     res.status(500).json({
       message: 'Failed to delete notification'
